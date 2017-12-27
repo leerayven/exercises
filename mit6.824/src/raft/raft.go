@@ -288,15 +288,67 @@ func (rf *Raft) Kill() {
 // for any long-running work.
 //
 
-type replyEvReqVote struct {
+func (rf *Raft)handle_evAppendEntry(req *reqEvent) {
+    args := req.args.(AppendEntryArgs)
+    reply := AppendEntryReply{}
+    if args.term < rf.currentTerm {
+        reply.term = rf.currentTerm
+        reply.success = false
+    } else {
+        reply.term = args.term
+        rf.term = args.term
+        if rf.log[args.prevLogIndex] == args.prevLogTerm {
+            reply.success = true
+            conflict := false
+            lastIndex := 0
+            for i, e := range args.entries {
+                if e1, ok := rf.log[i]; ok {
+                    if rf.log[i].term != e.term {
+                        conflict = true
+                    }
+                }
+                lastIndex = i
+                rf.log[i] = e
+            }
 
+            if args.leaderCommit > rf.commitIndex {
+                if args.leaderCommit > lastIndex {
+                    rf.commitIndex = lastIndex
+                } else {
+                    rf.commitIndex = args.leaderCommit
+                }
+            }
+            // commit ?
+            if conflict {
+                for {
+                    lastIndex ++
+                    if _, ok := rf.log[lastIndex]; ok {
+                        delete(rf.log, lastIndex)
+                    } else {
+                        break
+                    }
+                }
+            }
+        } else {
+            reply.success = false
+        }
+    }
+    req.replyCh <- reply
 }
-func (rf *Raft)handle_evAppendEntry() {
 
+func (rf *Raft)handle_evRequestVote(req *reqEvent) {
+    args := req.args.(RequestVoteArgs)
+    reply := RequestVoteReply{}
+    if args.term < rf.currentTerm {
+        reply.term = rf.currentTerm
+        reply.voteGranted = false
+    } else if args.term == rf.currentTerm {
+        if voted
+    } else {
+        
+    }
 }
-func (rf *Raft)handle_evRequestVote() {
 
-}
 func (rf *Raft)handle_evGetState(req *reqEvent) {
     reply := replyState{}
     reply.term = rf.currentTerm
@@ -308,6 +360,7 @@ func (rf *Raft)handle_evGetState(req *reqEvent) {
     }
     req.replyCh <- reply
 }
+
 func (rf *Raft)handel_evStartCommand() {
 
 }
