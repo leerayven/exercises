@@ -52,6 +52,21 @@ type Entry struct {
 	command interface{}
 }
 
+type EventType int
+
+const (
+	evAppendEntry   EventType = iota
+	evRequestVote
+    evGetState
+    evStartCommand
+)
+
+type reqEvent struct {
+	evType      EventType
+    args        interface{}
+    replyCh     chan interface{}
+}
+
 type Raft struct {
 	mu        sync.Mutex          // Lock to protect shared access to this peer's state
 	peers     []*labrpc.ClientEnd // RPC end points of all peers
@@ -74,16 +89,27 @@ type Raft struct {
 	// Your data here (2A, 2B, 2C).
 	// Look at the paper's Figure 2 for a description of what
 	// state a Raft server must maintain.
-
+    eventCh     chan reqEvent
 }
 
 // return currentTerm and whether this server
 // believes it is the leader.
+type replyState struct {
+    term        int
+    isleader    bool
+}
 func (rf *Raft) GetState() (int, bool) {
 
 	var term int
 	var isleader bool
 	// Your code here (2A).
+    req := reqEvent{}
+    req.evType = evGetState
+    req.replyCh = make(chan interface{})
+    rf.eventCh <- req
+    reply := (<- req.replyCh).(replyState)
+    term = reply.term
+    isleader = reply.isleader
 	return term, isleader
 }
 
@@ -124,8 +150,8 @@ func (rf *Raft) readPersist(data []byte) {
 //
 type RequestVoteArgs struct {
 	// Your data here (2A, 2B).
-    term        int
-    candidateId int
+    term            int
+    candidateId     int
     lastLogIndex    int
     lastLogTerm     int
 }
@@ -216,12 +242,26 @@ func (rf *Raft) sendAppendEntry(server int, args *AppendEntryArgs, reply *Append
 // term. the third return value is true if this server believes it is
 // the leader.
 //
+type replyStart struct {
+    index       int
+    term        int
+    isLeader    int
+}
+
 func (rf *Raft) Start(command interface{}) (int, int, bool) {
 	index := -1
 	term := -1
 	isLeader := true
 
 	// Your code here (2B).
+    req := reqEvent{}
+    req.evType = evStartCommand
+    req.replyCh = make(chan replyStart)
+    rf.eventCh <- req
+    reply := (<- req.replyCh).(replyStart)
+    index = reply.index
+    term = reply.term
+    isLeader = reply.isLeader
 
 	return index, term, isLeader
 }
@@ -247,84 +287,132 @@ func (rf *Raft) Kill() {
 // Make() must return quickly, so it should start goroutines
 // for any long-running work.
 //
-type EventType int
-
-const (
-	evAppendEntry   EventType = iota
-	evRequestVote
-)
-
-type reqEvent struct {
-	evType      EventType
-    args        interface{}
-    replyCh     interface{}
-}
 
 type replyEvReqVote struct {
 
 }
+func (rf *Raft)handle_evAppendEntry() {
 
-func (rf *Raft) handle_event(req reqEvent) bool{
 }
-func (rf *Raft) run_as_follower(ch chan reqEvent) {
+func (rf *Raft)handle_evRequestVote() {
+
+}
+func (rf *Raft)handle_evGetState(req *reqEvent) {
+    reply := replyState{}
+    reply.term = rf.currentTerm
+    if state == Leader {
+        reply.isleader = true
+    }
+    else {
+        reply.isleader = false
+    }
+    req.replyCh <- reply
+}
+func (rf *Raft)handel_evStartCommand() {
+
+}
+
+func (rf *Raft) handle_event(req *reqEvent) bool{
+    switch req.evType {
+    case evAppendEntry:
+
+    case evRequestVote:
+    case evGetState:
+        rf.handle_evGetState(req)
+    case evStartCommand:
+
+    }
+}
+func (rf *Raft) run_as_follower() {
     seed := rand.NewSource(time.Now().Unix())
     r := rand.New(seed)
-    timeout := 200 + r.Intn(300)
-    for i:=0; i != timeout; i++ {
+    du := 400 + r.Intn(600)
+
+    now := time.Now()
+    endtime := now.Add(time.Duration(du)*time.Millisecond)
+    for time.Now().Before(endtime) {
         select {
-        case req <- ch:
-            rf.handle_event(req)
-            if
-                return
-        default:
+        case req := <- rf.eventCh:
+            rf.handle_event(&req)
+            ...
+            return
+        case <- time.After(time.Millisecond*100):
+
         }
-        time.Sleep(2*time.Millisecond)
     }
+    rf.state = Candidate
+    rf.currentTerm ++
+    rf.votedFor = me
+
     //change to candidate
 }
-func (rf *Raft) run_as_candidate(ch chan reqEvent) {
+
+func (rf *Raft) run_for_leader(ch chan bool) {
+
+}
+
+func (rf *Raft) run_as_candidate() {
     seed := rand.NewSource(time.Now().Unix())
     r := rand.New(seed)
-    timeout := 20 + r.Intn(30)
-    for i:=0; i != timeout; i++ {
+    du := 400 + r.Intn(600)
+    now := time.Now()
+    endtime := now.Add(time.Duration(du)*time.Millisecond)
+    result := make(chan bool, 1)
+    for time.Now().Before(endtime) {
+        go rf.run_for_leader(result)
         select {
-
+        case req := <- rf.eventCh:
+            rf.handle_event(&req)
+            ...
+            return
+        case eleted := <- result:
+            rf.state = Leader
+            return
+        case time.After(time.Millisecond*300):
         }
     }
+    rf.currentTerm ++
+    rf.votedFor = me
 }
-func (rf *Raft) run_as_leader(ch chan reqEvent) {
+
+func (rf *Raft) run_as_leader() {
     for {
         select {
-        case req
+        case req := <- rf.eventCh:
+            rf.handle_event(&req)
+            ...
+            return
         }
     }
 }
-func (rf *Raft) run(ch chan Event) {
+
+func (rf *Raft) run() {
     var loops int
     for {
         switch rf.state {
         case Follower:
-            rf.run_as_follower(ch)
+            rf.run_as_follower()
             // wait for heart beat until timeout
         case Candidate:
-            rf.run_as_candidate(ch)
+            rf.run_as_candidate()
             // request vote until timeout
         case Leader:
-            rf.run_as_leader(ch)
+            rf.run_as_leader()
             // act as a leader
         default:
             // TODO
         }
     }
 }
+
 func Make(peers []*labrpc.ClientEnd, me int,
 	persister *Persister, applyCh chan ApplyMsg) *Raft {
 	rf := &Raft{}
 	rf.peers = peers
 	rf.persister = persister
 	rf.me = me
-    ch := make(chan Event)
-    go rf.run(ch)
+    rf.eventCh = make(chan reqEvent)
+    go rf.run()
 
 	// Your initialization code here (2A, 2B, 2C).
 
