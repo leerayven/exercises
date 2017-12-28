@@ -90,6 +90,8 @@ type Raft struct {
 	// Look at the paper's Figure 2 for a description of what
 	// state a Raft server must maintain.
     eventCh     chan reqEvent
+    lastLogTerm     int
+    lastLogIndex    int
 }
 
 // return currentTerm and whether this server
@@ -320,13 +322,21 @@ func (rf *Raft)handle_evAppendEntry(req *reqEvent) {
             }
             // commit ?
             if conflict {
+                rf.lastLogTerm = rf.log[lastIndex].term
+                rf.lastLogIndex = lastIndex
+                i := lastIndex
                 for {
-                    lastIndex ++
-                    if _, ok := rf.log[lastIndex]; ok {
-                        delete(rf.log, lastIndex)
+                    i ++
+                    if _, ok := rf.log[i]; ok {
+                        delete(rf.log, i)
                     } else {
                         break
                     }
+                }
+            } else {
+                if rf.lastLogTerm < lastIndex {
+                    rf.lastLogIndex = lastIndex
+                    rf.lastLogTerm = rf.log[lastIndex].term
                 }
             }
         } else {
