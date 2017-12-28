@@ -324,11 +324,10 @@ func (rf *Raft)handle_evAppendEntry(req *reqEvent) {
             if conflict {
                 rf.lastLogTerm = rf.log[lastIndex].term
                 rf.lastLogIndex = lastIndex
-                i := lastIndex
                 for {
-                    i ++
-                    if _, ok := rf.log[i]; ok {
-                        delete(rf.log, i)
+                    lastIndex ++
+                    if _, ok := rf.log[lastIndex]; ok {
+                        delete(rf.log, lastIndex)
                     } else {
                         break
                     }
