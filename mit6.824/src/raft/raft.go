@@ -290,8 +290,7 @@ func (rf *Raft) Kill() {
 // for any long-running work.
 //
 
-func (rf *Raft)handle_evAppendEntry(req *reqEvent) {
-    args := req.args.(AppendEntryArgs)
+func (rf *Raft)handle_evAppendEntry(req *reqEvent) { args := req.args.(AppendEntryArgs)
     reply := AppendEntryReply{}
     if args.term < rf.currentTerm {
         reply.term = rf.currentTerm
@@ -352,10 +351,23 @@ func (rf *Raft)handle_evRequestVote(req *reqEvent) {
         reply.term = rf.currentTerm
         reply.voteGranted = false
     } else if args.term == rf.currentTerm {
-        if voted
+        if (rf.votedFor == args.candidateId || rf.votedFor == -1) && (args.lastLogTerm >= rf.lastLogTerm || args.lastLogIndex >= rf.lastLogIndex) {
+            reply.term = args.term
+            reply.voteGranted = true
+        } else {
+            reply.term = rf.currentTerm
+            reply.voteGranted = false
+        }
     } else {
-        
+        rf.term = args.term
+        reply.term = args.term
+        if args.lastLogTerm >= rf.lastLogTerm || args.lastLogIndex >= rf.lastLogIndex {
+            reply.voteGranted = true
+        } else {
+            reply.voteGranted = false
+        }
     }
+    req.replyCh <- reply
 }
 
 func (rf *Raft)handle_evGetState(req *reqEvent) {
@@ -363,14 +375,13 @@ func (rf *Raft)handle_evGetState(req *reqEvent) {
     reply.term = rf.currentTerm
     if state == Leader {
         reply.isleader = true
-    }
-    else {
+    } else {
         reply.isleader = false
     }
     req.replyCh <- reply
 }
 
-func (rf *Raft)handel_evStartCommand() {
+func (rf *Raft)handle_evStartCommand() {
 
 }
 
