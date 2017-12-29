@@ -258,6 +258,7 @@ func (rf *Raft) Start(command interface{}) (int, int, bool) {
 	// Your code here (2B).
     req := reqEvent{}
     req.evType = evStartCommand
+    req.args = command
     req.replyCh = make(chan replyStart)
     rf.eventCh <- req
     reply := (<- req.replyCh).(replyStart)
@@ -296,6 +297,7 @@ func (rf *Raft)handle_evAppendEntry(req *reqEvent) { args := req.args.(AppendEnt
         reply.term = rf.currentTerm
         reply.success = false
     } else {
+        rf.state = Follower
         reply.term = args.term
         rf.term = args.term
         if rf.log[args.prevLogIndex] == args.prevLogTerm {
@@ -355,10 +357,12 @@ func (rf *Raft)handle_evRequestVote(req *reqEvent) {
             reply.term = args.term
             reply.voteGranted = true
         } else {
+            rf.state = Follower
             reply.term = rf.currentTerm
             reply.voteGranted = false
         }
     } else {
+        rf.state = Follower
         rf.term = args.term
         reply.term = args.term
         if args.lastLogTerm >= rf.lastLogTerm || args.lastLogIndex >= rf.lastLogIndex {
@@ -381,8 +385,30 @@ func (rf *Raft)handle_evGetState(req *reqEvent) {
     req.replyCh <- reply
 }
 
-func (rf *Raft)handle_evStartCommand() {
+func (rf *Raft)handle_evStartCommand(req *reqEvent) {
+    reply := replyStart{}
+    if rf.state != Leader {
+        reply.isLeader = false
+    } else {
+        reply.isLeader = true
+        rf.lastLogIndex ++
+        rf.lastLogTerm = rf.currentTerm
+        rf.log[rf.lastLogIndex] = Entry{term: rf.currentTerm, command: req.args}
+        commonCh := chan interface{}
+        for i, peer := range rf.peers {
+            reqAppend := reqEvent{}
+            reqAppend.evType = evAppendEntry{}
+            reqAppend.replyCh = commonCh
 
+            args := AppendEntryArgs{}
+            args.term = rf.currentTerm
+            args.leaderId = rf.me
+            
+            
+            if i 
+        }
+    }
+    req.replyCh <- reply
 }
 
 func (rf *Raft) handle_event(req *reqEvent) bool{
@@ -460,7 +486,6 @@ func (rf *Raft) run_as_leader() {
 }
 
 func (rf *Raft) run() {
-    var loops int
     for {
         switch rf.state {
         case Follower:
