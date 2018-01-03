@@ -291,7 +291,8 @@ func (rf *Raft) Kill() {
 // for any long-running work.
 //
 
-func (rf *Raft)handle_evAppendEntry(req *reqEvent) { args := req.args.(AppendEntryArgs)
+func (rf *Raft)handle_evAppendEntry(req *reqEvent) {
+    args := req.args.(AppendEntryArgs)
     reply := AppendEntryReply{}
     if args.term < rf.currentTerm {
         reply.term = rf.currentTerm
@@ -394,19 +395,6 @@ func (rf *Raft)handle_evStartCommand(req *reqEvent) {
         rf.lastLogIndex ++
         rf.lastLogTerm = rf.currentTerm
         rf.log[rf.lastLogIndex] = Entry{term: rf.currentTerm, command: req.args}
-        commonCh := chan interface{}
-        for i, peer := range rf.peers {
-            reqAppend := reqEvent{}
-            reqAppend.evType = evAppendEntry{}
-            reqAppend.replyCh = commonCh
-
-            args := AppendEntryArgs{}
-            args.term = rf.currentTerm
-            args.leaderId = rf.me
-            
-            
-            if i 
-        }
     }
     req.replyCh <- reply
 }
@@ -474,13 +462,45 @@ func (rf *Raft) run_as_candidate() {
     rf.votedFor = me
 }
 
+        '''
+        '''
+func (rf *Raft) broadcast() {
+    commonCh := chan interface{}
+    for i, peer := range rf.peers {
+        if i != me {
+            reqAppend := reqEvent{}
+            reqAppend.evType = evAppendEntry
+            reqAppend.replyCh = commonCh
+            args := AppendEntryArgs{}
+            args.term = rf.currentTerm
+            args.leaderId = rf.me
+            args.prevLogIndex = rf.nextIndex[i]-1
+            args.prevLogTerm = rf.log[args.prevLogIndex].term
+            entries := make(map[int]Entry)
+            if rf.nextIndex[i] <= rf.lastLogIndex {
+                entries[rf.nextIndex[i]] = rf.log[rf.nextIndex[i]]
+            }
+            rf.entries = entries
+            args.leaderCommit = rf.commitIndex
+            reqAppend.args = args
+            rf.sendAppendEntry(peer, )
+        }
+    }
+}
+
+func (rf *Raft) sendAppendEntry(server int, args *AppendEntryArgs, reply *AppendEntryReply) bool {
+    ok := rf.peers[server].Call("Raft.AppendEntry", args, reply)
+    return ok
+}
+
 func (rf *Raft) run_as_leader() {
     for {
+        rf.broadcast()
         select {
         case req := <- rf.eventCh:
             rf.handle_event(&req)
             ...
-            return
+        case time.After(time.Millisecond*BROADCAST_INTERVAL)
         }
     }
 }
