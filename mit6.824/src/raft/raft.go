@@ -462,15 +462,50 @@ func (rf *Raft) run_as_candidate() {
     rf.votedFor = me
 }
 
-        '''
-        '''
+type RpcType int
+
+const (
+    rpcAppendEntry  RpcType = iota
+    rpcRequestVote
+)
+
+type reqRpc struct {
+    rpcType     RpcType
+    args        interface{}
+    replyCh     chan interface
+}
+
+type rpcReply struct {
+    success     bool
+    server      int
+    reply       interface{}
+}
+
+func (rf *Raft) rpcWrapper(server int, req *reqRpc) {
+    wrapperReply := rpcReply{}
+    wrapperReply.server = server
+    if req.rpcType == rpcAppendEntry {
+        reply := AppendEntryReply{}
+        ok := rf.sendAppendEntry(server, &(req.args.(AppendEntryArgs)), &reply)
+        wrapperReply.success = ok
+        wrapperReply.reply = reply
+    } else if req.rpcType == rpcRequestVote {
+        reply := RequestVoteReply{}
+        ok := rf.sendRequestVote(server, &(req.args.(RequestVoteArgs)), &reply)
+        wrapperReply.success = ok
+        wrapperReply.reply = reply
+    } else {
+    //error
+    }
+    req.replyCh <- wrapperReply
+}
+
 func (rf *Raft) broadcast() {
     commonCh := chan interface{}
+    numSent := 0
     for i, peer := range rf.peers {
         if i != me {
-            reqAppend := reqEvent{}
-            reqAppend.evType = evAppendEntry
-            reqAppend.replyCh = commonCh
+            numSent ++
             args := AppendEntryArgs{}
             args.term = rf.currentTerm
             args.leaderId = rf.me
@@ -482,8 +517,30 @@ func (rf *Raft) broadcast() {
             }
             rf.entries = entries
             args.leaderCommit = rf.commitIndex
-            reqAppend.args = args
-            rf.sendAppendEntry(peer, )
+
+            req := reqRpc{}
+            req.rpcType = rpcAppendEntry
+            req.args = args
+            req.replyCh = commonCh
+            go rf.rpcWrapper(peer, &req)
+        }
+    }
+    commonReply := rpcReply{}
+    outdated := false
+    numSuccess := 0
+    for i:=0;i != numSent; i ++ {
+        commonReply <- commonCh
+        appendReply := commonReply.reply.(AppendEntryReply)
+        if commonReply.success == false {
+            continue
+        }
+        if reply.term > rf.currentTerm {
+            outdated := true
+        }
+        if reply.success == true {
+            numSuccess ++
+            rf.matchIndex = rf.nextIndex[]
+        } else {
         }
     }
 }
