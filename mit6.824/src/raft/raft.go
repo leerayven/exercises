@@ -529,23 +529,32 @@ func (rf *Raft) broadcast() {
     outdated := false
     numSuccess := 0
     for i:=0;i != numSent; i ++ {
-        commonReply <- commonCh
+        commonReply = (<- commonCh).(rpcReply)
         appendReply := commonReply.reply.(AppendEntryReply)
         if commonReply.success == false {
             continue
         }
-        if reply.term > rf.currentTerm {
+        if appendReply.term > rf.currentTerm {
             outdated := true
+            continue
         }
-        if reply.success == true {
+        if appendReply.success == true {
             numSuccess ++
-            rf.matchIndex = rf.nextIndex[]
+            rf.matchIndex[i] = rf.nextIndex[i]
+            rf.nextIndex[i] ++
         } else {
+            if rf.nextIndex[i] < 1 {
+                //report
+            }
+            rf.nextIndex[i] --
         }
+    }
+    if outdated = true {
+        rf.state = Follower
     }
 }
 
-func (rf *Raft) sendAppendEntry(server int, args *AppendEntryArgs, reply *AppendEntryReply) bool {
+func (rf *Raft) sendAppendEntry(server int, args *AppendEntryArgs, reply *AppendEntryReply
     ok := rf.peers[server].Call("Raft.AppendEntry", args, reply)
     return ok
 }
