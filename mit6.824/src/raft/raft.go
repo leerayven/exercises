@@ -402,14 +402,16 @@ func (rf *Raft)handle_evStartCommand(req *reqEvent) {
 func (rf *Raft) handle_event(req *reqEvent) bool{
     switch req.evType {
     case evAppendEntry:
-
+        rf.handle_evAppendEntry(req)
     case evRequestVote:
+        rf.handle_evRequestVote(req)
     case evGetState:
         rf.handle_evGetState(req)
     case evStartCommand:
-
+        rf.handle_evStateCommand(req)
     }
 }
+
 func (rf *Raft) run_as_follower() {
     seed := rand.NewSource(time.Now().Unix())
     r := rand.New(seed)
@@ -428,36 +430,6 @@ func (rf *Raft) run_as_follower() {
         }
     }
     rf.state = Candidate
-    rf.currentTerm ++
-    rf.votedFor = me
-
-    //change to candidate
-}
-
-func (rf *Raft) run_for_leader(ch chan bool) {
-
-}
-
-func (rf *Raft) run_as_candidate() {
-    seed := rand.NewSource(time.Now().Unix())
-    r := rand.New(seed)
-    du := 400 + r.Intn(600)
-    now := time.Now()
-    endtime := now.Add(time.Duration(du)*time.Millisecond)
-    result := make(chan bool, 1)
-    for time.Now().Before(endtime) {
-        go rf.run_for_leader(result)
-        select {
-        case req := <- rf.eventCh:
-            rf.handle_event(&req)
-            ...
-            return
-        case eleted := <- result:
-            rf.state = Leader
-            return
-        case time.After(time.Millisecond*300):
-        }
-    }
     rf.currentTerm ++
     rf.votedFor = me
 }
@@ -500,11 +472,54 @@ func (rf *Raft) rpcWrapper(server int, req *reqRpc) {
     req.replyCh <- wrapperReply
 }
 
+func (rf *Raft) run_for_leader(ch chan bool) {
+    commonCh := chan interface{}
+    numSent := 0
+    for i, peer := range rf.peers {
+        if i != rf.me {
+            numSent ++
+            args := RequestVoteArgs{}
+            args.term = rf.currentTerm
+            args.candidateId = rf.me
+            args.lastLogIndex = rf.lastLogIndex
+            args.lastLogTerm = rf.lastLogTerm
+
+            req := reqRpc{}
+            req.rpcType = rpcRequestVote
+            req.args = args
+            req.replyCh = commonCh
+            go rf.rpcWrapper(peer, &req)
+        }
+    }
+    commonReply := rpcReply{}
+    outdated := false
+    numGranted := 0
+    for i:=0; i != numSent; i ++ {
+        commonReply = (<-commonCh).(rpcReply)
+        if commonReply.success == false {
+            continue
+        }
+        requestReply := commonReply.reply.(RequestVoteReply)
+        if requestReply.term > rf.currentTerm {
+            outdated = true
+            continue
+        }
+        if requestReply.voteGranted == true {
+            numGranted ++
+        }
+    }
+    if outdated == true {
+        rf.state = Follower
+        return
+    }
+    if  
+}
+
 func (rf *Raft) broadcast() {
     commonCh := chan interface{}
     numSent := 0
     for i, peer := range rf.peers {
-        if i != me {
+        if i != rf.me {
             numSent ++
             args := AppendEntryArgs{}
             args.term = rf.currentTerm
@@ -530,10 +545,10 @@ func (rf *Raft) broadcast() {
     numSuccess := 0
     for i:=0;i != numSent; i ++ {
         commonReply = (<- commonCh).(rpcReply)
-        appendReply := commonReply.reply.(AppendEntryReply)
         if commonReply.success == false {
             continue
         }
+        appendReply := commonReply.reply.(AppendEntryReply)
         if appendReply.term > rf.currentTerm {
             outdated := true
             continue
@@ -551,7 +566,31 @@ func (rf *Raft) broadcast() {
     }
     if outdated = true {
         rf.state = Follower
+    } else if numSuccess >
+}
+
+func (rf *Raft) run_as_candidate() {
+    seed := rand.NewSource(time.Now().Unix())
+    r := rand.New(seed)
+    du := 400 + r.Intn(600)
+    now := time.Now()
+    endtime := now.Add(time.Duration(du)*time.Millisecond)
+    result := make(chan bool, 1)
+    for time.Now().Before(endtime) {
+        go rf.run_for_leader(result)
+        select {
+        case req := <- rf.eventCh:
+            rf.handle_event(&req)
+            ...
+            return
+        case eleted := <- result:
+            rf.state = Leader
+            return
+        case time.After(time.Millisecond*300):
+        }
     }
+    rf.currentTerm ++
+    rf.votedFor = me
 }
 
 func (rf *Raft) sendAppendEntry(server int, args *AppendEntryArgs, reply *AppendEntryReply
@@ -576,13 +615,10 @@ func (rf *Raft) run() {
         switch rf.state {
         case Follower:
             rf.run_as_follower()
-            // wait for heart beat until timeout
         case Candidate:
             rf.run_as_candidate()
-            // request vote until timeout
         case Leader:
             rf.run_as_leader()
-            // act as a leader
         default:
             // TODO
         }
