@@ -291,13 +291,15 @@ func (rf *Raft) Kill() {
 // for any long-running work.
 //
 
-func (rf *Raft)handle_evAppendEntry(req *reqEvent) {
+func (rf *Raft)handle_evAppendEntry(req *reqEvent) bool {
     args := req.args.(AppendEntryArgs)
     reply := AppendEntryReply{}
+    reEnter = false
     if args.term < rf.currentTerm {
         reply.term = rf.currentTerm
         reply.success = false
     } else {
+        reEnter = true
         rf.state = Follower
         reply.term = args.term
         rf.term = args.term
@@ -345,24 +347,30 @@ func (rf *Raft)handle_evAppendEntry(req *reqEvent) {
         }
     }
     req.replyCh <- reply
+    return reEnter
 }
 
-func (rf *Raft)handle_evRequestVote(req *reqEvent) {
+func (rf *Raft)handle_evRequestVote(req *reqEvent) bool {
+    var reEnter bool
     args := req.args.(RequestVoteArgs)
     reply := RequestVoteReply{}
     if args.term < rf.currentTerm {
+        reEnter = false
         reply.term = rf.currentTerm
         reply.voteGranted = false
     } else if args.term == rf.currentTerm {
         if (rf.votedFor == args.candidateId || rf.votedFor == -1) && (args.lastLogTerm >= rf.lastLogTerm || args.lastLogIndex >= rf.lastLogIndex) {
+            reEnter = true
+            rf.state = Follower
             reply.term = args.term
             reply.voteGranted = true
         } else {
-            rf.state = Follower
+            reEnter = false
             reply.term = rf.currentTerm
             reply.voteGranted = false
         }
     } else {
+        reEnter = true
         rf.state = Follower
         rf.term = args.term
         reply.term = args.term
@@ -373,9 +381,10 @@ func (rf *Raft)handle_evRequestVote(req *reqEvent) {
         }
     }
     req.replyCh <- reply
+    return reEnter
 }
 
-func (rf *Raft)handle_evGetState(req *reqEvent) {
+func (rf *Raft)handle_evGetState(req *reqEvent) bool {
     reply := replyState{}
     reply.term = rf.currentTerm
     if state == Leader {
@@ -384,9 +393,10 @@ func (rf *Raft)handle_evGetState(req *reqEvent) {
         reply.isleader = false
     }
     req.replyCh <- reply
+    return false
 }
 
-func (rf *Raft)handle_evStartCommand(req *reqEvent) {
+func (rf *Raft)handle_evStartCommand(req *reqEvent) bool {
     reply := replyStart{}
     if rf.state != Leader {
         reply.isLeader = false
@@ -397,19 +407,22 @@ func (rf *Raft)handle_evStartCommand(req *reqEvent) {
         rf.log[rf.lastLogIndex] = Entry{term: rf.currentTerm, command: req.args}
     }
     req.replyCh <- reply
+    return false
 }
 
 func (rf *Raft) handle_event(req *reqEvent) bool{
+    var reEnter bool
     switch req.evType {
     case evAppendEntry:
-        rf.handle_evAppendEntry(req)
+        reEnter = rf.handle_evAppendEntry(req)
     case evRequestVote:
-        rf.handle_evRequestVote(req)
+        reEnter = rf.handle_evRequestVote(req)
     case evGetState:
-        rf.handle_evGetState(req)
+        reEnter = rf.handle_evGetState(req)
     case evStartCommand:
-        rf.handle_evStateCommand(req)
+        reEnter = rf.handle_evStateCommand(req)
     }
+    return reEnter
 }
 
 func (rf *Raft) run_as_follower() {
@@ -422,9 +435,9 @@ func (rf *Raft) run_as_follower() {
     for time.Now().Before(endtime) {
         select {
         case req := <- rf.eventCh:
-            rf.handle_event(&req)
-            ...
-            return
+            if true == rf.handle_event(&req) {
+                return;
+            }
         case <- time.After(time.Millisecond*100):
 
         }
@@ -580,9 +593,9 @@ func (rf *Raft) run_as_candidate() {
         go rf.run_for_leader(result)
         select {
         case req := <- rf.eventCh:
-            rf.handle_event(&req)
-            ...
-            return
+            if true == rf.handle_event(&req){
+                return;
+            }
         case eleted := <- result:
             rf.state = Leader
             return
@@ -602,9 +615,10 @@ func (rf *Raft) run_as_leader() {
     for {
         rf.broadcast()
         select {
-        case req := <- rf.eventCh:
-            rf.handle_event(&req)
-            ...
+        case req := <-rf.eventCh:
+            if true == rf.handle_event(&req){
+                return;
+            }
         case time.After(time.Millisecond*BROADCAST_INTERVAL)
         }
     }
