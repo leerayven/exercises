@@ -525,7 +525,7 @@ func (rf *Raft) run_for_leader(ch chan bool) {
         rf.state = Follower
         return
     }
-    if  
+    if 
 }
 
 func (rf *Raft) broadcast() {
@@ -592,11 +592,11 @@ func (rf *Raft) run_as_candidate() {
     for time.Now().Before(endtime) {
         go rf.run_for_leader(result)
         select {
-        case req := <- rf.eventCh:
+        case req := <-rf.eventCh:
             if true == rf.handle_event(&req){
                 return;
             }
-        case eleted := <- result:
+        case eleted := <-result:
             rf.state = Leader
             return
         case time.After(time.Millisecond*300):
