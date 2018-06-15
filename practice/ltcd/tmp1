@@ -1,0 +1,278 @@
+{
+  "data": {
+    "server": {
+      "bind_ip": "0.0.0.0",
+      "bind_port": 20804,
+      "mode": 3,
+      "sock_type": 1,
+      "server_setting": {
+        "worker_num": 1
+      }
+    },
+    "log": {
+      "level": 255,
+      "adaptor": {
+        "FILE": [
+          "\\Bili_Lib\\Log\\LoggerServiceFile",
+          [
+            "/data/logs/publisher-service/{level}_{date}"
+          ]
+        ]
+      }
+    },
+    "service_client_config": {
+      "conn_timeout": 0.5,
+      "conn_retry_times": 3
+    },
+    "api_host": "127.0.0.1",
+    "service_info": {
+      "publisher": [
+        {
+          "group": "default",
+          "ip": "127.0.0.1",
+          "port": 20804
+        }
+      ]
+    },
+    "kafka": {
+      "children_count": 1,
+      "broker_clusters": [
+        {
+          "name": "Development",
+          "broker_list": [
+            "172.18.33.171:9092"
+          ],
+          "topic_list": [
+            "DynamicRepostCount",
+            "DynamicPost",
+            "SendGift",
+            "SendGift_Pre",
+            "SendUserAward",
+            "SendUserAward_Pre",
+            "UserAward_Development",
+            "UserAward",
+            "LiveUserMedalLevelChange",
+            "DrawListChanged",
+            "NotifyUserFavChange",
+            "UserReward",
+            "UserDbChange",
+            "UserTask",
+            "FeedRelationChanged",
+            "FansMedalAddIntimacy",
+            "UserDbChange",
+            "DrawStatusChanged",
+            "UpMedalChangeNotify",
+            "DrawTagChanged",
+            "UserOnline",
+            "VCPlayNotify",
+            "DanmuNotify",
+            "RoomOnlineNotify",
+            "RoomNotify",
+            "ClipVideoSendIm",
+            "LiveAdminChanged",
+            "UserSpend",
+            "DrawListChanged",
+            "OneLiveRoomAreaChange",
+            "CommentRegister",
+            "UserTask",
+            "VcVideoChange",
+            "DrawExtraInfoChanged",
+            "VcCloudNotify",
+            "PushTaskExecNotify",
+            "CreateRoom",
+            "PushTaskAddNotify",
+            "MsgDelivery",
+            "inbox_new_msg",
+            "LinkGroupAsyncReq",
+            "im_msg_pb_topic",
+            "TaskFinish",
+            "MultiFollowChange",
+            "MonitorOnline",
+            "ReportEvent",
+            "BplusBannedUserUpdate",
+            "MonitorRoomGiftNum",
+            "MonitorData",
+            "DynamicAudit",
+            "CommonEsOp"
+          ]
+        }
+      ],
+      "redis": {
+        "server": {
+          "host": "172.18.33.171",
+          "port": 6379,
+          "timeout": 0.1
+        },
+        "options": {
+          "read_timeout": 0.8
+        }
+      },
+      "consume_idle_seconds": 1200,
+      "queue_alarm_length": 500,
+      "event_max_alive_time": 3600,
+      "event_lock_expired_time": 3600,
+      "topic_custom": {
+        "SendGift": {
+          "consume_idle_seconds": 1000,
+          "queue_alarm_length": 100
+        },
+        "MsgDelivery": {
+          "consume_idle_seconds": 1200,
+          "queue_alarm_length": 10
+        }
+      }
+    },
+    "monitor_topics": {
+      "DynamicRepostCount": [
+        "topic_sub"
+      ],
+      "SendGift": [
+        "Room_Gift_CG",
+        "Gift_CG",
+        "Master_CG",
+        "Room_CG",
+        "User_CG",
+        "Activity_CG",
+        "UserIntimacy_CG",
+        "ClipGift"
+      ],
+      "CreateRoom": [
+        "FansMedal_CG"
+      ],
+      "SendGift_Pre": [
+        "Test6_CG",
+        "Gift_CG",
+        "Master_CG",
+        "Room_CG",
+        "User_CG",
+        "Activity_CG",
+        "UserIntimacy_CG"
+      ],
+      "CommentRegister": [
+        "comment"
+      ],
+      "SendUserAward": [],
+      "SendUserAward_Pre": [],
+      "UserAward": [
+        "UserAward_CG"
+      ],
+      "UserReward": [
+        "ClipGift",
+        "VideoGroup",
+        "USER_EX",
+        "LinkDraw"
+      ],
+      "DrawStatusChanged": [
+        "LinkDraw",
+        "PhotoActivity",
+        "LinkDrawReject"
+      ],
+      "DrawTagChanged": [
+        "LinkDraw"
+      ],
+      "DrawExtraInfoChanged": [
+        "LinkDraw"
+      ],
+      "FeedRelationChanged": [
+        "FansMedal",
+        "IMDataBus",
+        "Push"
+      ],
+      "FansMedalAddIntimacy": [
+        "FansMedal"
+      ],
+      "UserOnline": [
+        "UserOnline_CG"
+      ],
+      "UserSpend": [
+        "Activity_CG"
+      ],
+      "DrawListChanged": [
+        "LinkFeed"
+      ],
+      "UserTask": [
+        "Activity_CG"
+      ],
+      "LinkGroupAsyncReq": [
+        "LinkGroup"
+      ],
+      "VCPlayNotify": [
+        "VideoGroup",
+        "RecordGroup"
+      ],
+      "DanmuNotify": [
+        "danmu"
+      ],
+      "DynamicPost": [
+        "Dynamic"
+      ],
+      "RoomOnlineNotify": [
+        "room-group",
+        "LinkDynamic"
+      ],
+      "RoomNotify": [
+        "room-group-shylf-live-app-04",
+        "room-group-shylf-live-app-05",
+        "room-group-shylf-live-app-06",
+        "room-group-shylf-live-app-07",
+        "room-group-shylf-live-app-08"
+      ],
+      "ClipVideoSendIm": [
+        "LinkFeed",
+        "LinkDynamic"
+      ],
+      "UserDbChange": [
+        "User_CG"
+      ],
+      "NotifyUserFavChange": [
+        "LinkDraw",
+        "VideoGroup"
+      ],
+      "BplusBannedUserUpdate": [
+        "BplusBanned"
+      ],
+      "LiveUserMedalLevelChange": [
+        "Activity_CG",
+        "LinkGroup"
+      ],
+      "MsgDelivery": [
+        "LinkInbox"
+      ],
+      "inbox_new_msg": [
+        "inbox"
+      ],
+      "OneLiveRoomAreaChange": [
+        "Room_Area_CG"
+      ],
+      "im_msg_pb_topic": [
+        "libsrvkit.1"
+      ],
+      "VcVideoChange": [
+        "VideoChangeClip",
+        "VideoChangeOper",
+        "VideoChangeClipFeed"
+      ],
+      "VcCloudNotify": [
+        "ClipCloudNotify"
+      ],
+      "PushTaskExecNotify": [
+        "TaskExec"
+      ],
+      "PushTaskAddNotify": [
+        "TaskAdd"
+      ],
+      "MultiFollowChange": [
+        "LiveRelation"
+      ],
+      "MonitorOnline": [
+        "MonitorService"
+      ],
+      "MonitorRoomGiftNum": [
+        "Monitor_CG"
+      ],
+      "MonitorData": [
+        "Monitor_CG"
+      ]
+    }
+  }
+}

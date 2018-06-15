@@ -1,0 +1,1967 @@
+{
+    "server":
+    {
+        "bind_ip": "0.0.0.0",
+        "bind_port": 20801,
+        "mode": 3,
+        "sock_type": 1,
+        "server_setting":
+        {
+            "worker_num": 10,
+            "task_worker_num": 1
+        }
+    },
+    "log":
+    {
+        "level": 255,
+        "list": [
+        {
+            "type": "local",
+            "log_name": "/data/logs/{app_name}/{level}_{date}.log"
+        }]
+    },
+    "app_name": "queue_dispatcher",
+    "app_type": "swoole_server",
+    "swoole_server":
+    {
+        "listen": 20801,
+        "worker_num": 1,
+        "task_worker_num": 1
+    },
+    "apollo_dispatch_json_path": "/data/app/zk_conf/result_raw/dispatch_v2.json",
+    "zk":
+    {
+        "service_upload_enable": 1,
+        "dynamic_config_enable": 1,
+        "dynamic_rpc_enable": 1,
+        "host_list": [
+            "172.18.33.171:2182"
+        ],
+        "path": ""
+    },
+    "redis":
+    {
+        "server":
+        {
+            "host": "172.18.33.171",
+            "port": 6379,
+            "timeout": 0.1
+        },
+        "options":
+        {
+            "read_timeout": 0.8
+        }
+    },
+    "app":
+    {
+        "upstreams":
+        {
+            "TaskFinish":
+            {
+                "consumers": [
+                {
+                    "group_name": "Activity_CG",
+                    "process_num": 1,
+                    "from_beginning": 1,
+                    "callback":
+                    {
+                        "call_type": "swoole",
+                        "cmd": "/activity/v1/Notify/dailyTask",
+                        "timeout": "100",
+                        "retry": 0
+                    }
+                }]
+            },
+            "DynamicAudit": {
+  "consumers": [
+    {
+      "group_name": "Dynamic_ES_CG",
+      "process_num": 1,
+      "from_beginning": 0,
+      "offline": 0,
+      "consume_mode": "error_continue",
+      "retry": {
+        "mode": "line",
+        "interval": 100,
+        "max_times ": 3
+      },
+      "callback": {
+        "call_type": "swoole",
+        "cmd": "/bplus_es/v0/Es/dynamicNotify",
+        "timeout": "300"
+      }
+    }
+  ]
+},
+            "CommonEs":{
+                "consumers": [
+                    {
+                        "group_name": "Bplus_ESX",
+                        "process_num": 1,
+                        "from_beginning": 0,
+                        "offline": 0,
+                        "consume_mode": "error_continue",
+                        "retry":{
+                            "mode": "line",
+                            "interval": 100,
+                            "max_times": 3
+                        },
+                        "callback": {
+                            "call_type": "swoole",
+                            "cmd": "/bplus_es/v0/Esx/asyncAMD",
+                            "timeout": "300"
+                        }
+                    }
+                ]
+            },
+            "TaskFinish_Development":
+            {
+                "consumers": [
+                {
+                    "group_name": "Activity_CG",
+                    "process_num": 1,
+                    "from_beginning": 1,
+                    "callback":
+                    {
+                        "call_type": "swoole",
+                        "cmd": "/activity/v1/Notify/dailyTask",
+                        "timeout": "100",
+                        "retry": 0
+                    }
+                }]
+            },
+            "FansMedalAddIntimacy":
+            {
+                "consumers": [
+                {
+                    "group_name": "FansMedal",
+                    "process_num": 1,
+                    "from_beginning": 1,
+                    "callback":
+                    {
+                        "call_type": "swoole",
+                        "cmd": "/fans_medal/v1/Notify/increase_medal_intimacy",
+                        "timeout": "100",
+                        "retry": 0
+                    }
+                }]
+            },
+            "MonitorOnline":
+            {
+                "consumers": [
+                {
+                    "group_name": "RoomService",
+                    "process_num": 1,
+                    "from_beginning": 0,
+                    "offline": 0,
+                    "callback":
+                    {
+                        "call_type": "swoole",
+                        "cmd": "/room/v1/Consumer/monitorOnline",
+                        "timeout": "100",
+                        "retry": 0
+                    }
+                }]
+            },
+            "BannedUserSyn":
+            {
+                "consumers": [
+                {
+                    "group_name": "BannedUser",
+                    "process_num": 1,
+                    "from_beginning": 1,
+                    "callback":
+                    {
+                        "call_type": "swoole",
+                        "cmd": "/banned_service/v0/Message/synUser",
+                        "timeout": "100",
+                        "retry": 0
+                    }
+                }]
+            },
+            "BannedUserUpdate":
+            {
+                "consumers": [
+                {
+                    "group_name": "BannedUser",
+                    "process_num": 1,
+                    "from_beginning": 1,
+                    "offline": 0,
+                    "callback":
+                    {
+                        "call_type": "swoole",
+                        "cmd": "/banned_service/v0/Message/synUpdate",
+                        "timeout": "100",
+                        "retry": 0
+                    }
+                }]
+            },
+            "BplusBannedUserUpdate":
+            {
+                "consumers": [
+                {
+                    "group_name": "BplusBannedUser",
+                    "process_num": 1,
+                    "from_beginning": 1,
+                    "offline": 0,
+                    "callback":
+                    {
+                        "call_type": "swoole",
+                        "cmd": "/bplus_banned/v0/Message/synUpdate",
+                        "timeout": "100",
+                        "retry": 0
+                    }
+                }]
+            },
+            "FeedRelationChanged":
+            {
+                "consumers": [
+                {
+                    "group_name": "FansMedal",
+                    "process_num": 4,
+                    "from_beginning": 1,
+                    "offline": 0,
+                    "callback":
+                    {
+                        "call_type": "swoole",
+                        "cmd": "/fans_medal/v1/Notify/on_feed_changed",
+                        "timeout": "100",
+                        "retry": 0
+                    }
+                },
+                {
+                    "group_name": "IMDataBus",
+                    "process_num": 4,
+                    "from_beginning": 1,
+                    "offline": 0,
+                    "callback":
+                    {
+                        "call_type": "swoole",
+                        "cmd": "/databus_sub/v1/databus_sub/notice_sub",
+                        "timeout": "100",
+                        "retry": 0
+                    }
+                },
+                {
+                    "group_name": "RankDB_CG",
+                    "process_num": 4,
+                    "from_beginning": 1,
+                    "offline": 0,
+                    "callback":
+                    {
+                        "call_type": "swoole",
+                        "cmd": "/rankdb/v1/Notify/feedChanged",
+                        "timeout": "100",
+                        "retry": 0
+                    }
+                },
+                {
+                    "group_name": "Relation_Apply",
+                    "process_num": 4,
+                    "from_beginning": 1,
+                    "offline": 0,
+                    "callback":
+                    {
+                        "call_type": "swoole",
+                        "cmd": "/relation_apply/v0/Notify/on_relation_changed",
+                        "timeout": "100",
+                        "retry": 0
+                    }
+                }]
+            },
+            "MultiFollowChange":
+            {
+                "consumers": [
+                {
+                    "group_name": "LiveRelation",
+                    "process_num": 4,
+                    "from_beginning": 1,
+                    "offline": 0,
+                    "callback":
+                    {
+                        "call_type": "swoole",
+                        "cmd": "/relation/v1/Notify/on_multi_relation",
+                        "timeout": "100",
+                        "retry": 0
+                    }
+                }]
+            },
+            "NotifyUserFavChange":
+            {
+                "consumers": [
+                {
+                    "group_name": "LinkDraw",
+                    "process_num": 1,
+                    "offline": 0,
+                    "from_beginning": 0,
+                    "callback":
+                    {
+                        "call_type": "swoole",
+                        "cmd": "/link_draw/v1/Notify/fav_count_change",
+                        "timeout": "500",
+                        "retry": 0
+                    }
+                },
+                {
+                    "group_name": "VideoGroup",
+                    "process_num": 1,
+                    "from_beginning": 0,
+                    "callback":
+                    {
+                        "call_type": "swoole",
+                        "cmd": "/clip/v1/Notify/onEnshrine",
+                        "timeout": "100",
+                        "retry": 0
+                    }
+                }]
+            },
+            "UserDbChange":
+            {
+                "consumers": [
+                {
+                    "group_name": "User_CG",
+                    "process_num": 4,
+                    "offline": 0,
+                    "from_beginning": 0,
+                    "callback":
+                    {
+                        "call_type": "swoole",
+                        "cmd": "/user/v1/Notify/cacheclear",
+                        "timeout": "102",
+                        "retry": 0
+                    }
+                }]
+            },
+            "UserAward":
+            {
+                "consumers": [
+                {
+                    "group_name": "UserAward_CG",
+                    "process_num": 4,
+                    "offline": 0,
+                    "from_beginning": 0,
+                    "callback":
+                    {
+                        "call_type": "swoole",
+                        "cmd": "/user/v1/Notify/user_award",
+                        "timeout": "101",
+                        "retry": 0
+                    }
+                }]
+            },
+            "UserOnline":
+            {
+                "consumers": [
+                {
+                    "group_name": "UserOnline_CG",
+                    "process_num": 8,
+                    "offline": 0,
+                    "from_beginning": 0,
+                    "callback":
+                    {
+                        "call_type": "swoole",
+                        "cmd": "/user/v1/Notify/user_online",
+                        "timeout": "102",
+                        "retry": 0
+                    }
+                }]
+            },
+            "UserReward":
+            {
+                "consumers": [
+                {
+                    "group_name": "USER_EX",
+                    "process_num": 1,
+                    "from_beginning": 0,
+                    "offline": 0,
+                    "callback":
+                    {
+                        "call_type": "swoole",
+                        "cmd": "/userext/v1/Notify/like",
+                        "timeout": "500",
+                        "retry": 0
+                    }
+                },
+                {
+                    "group_name": "LinkDraw",
+                    "process_num": 1,
+                    "offline": 0,
+                    "from_beginning": 0,
+                    "callback":
+                    {
+                        "call_type": "swoole",
+                        "cmd": "/link_draw/v1/Notify/like_count_change",
+                        "timeout": "500",
+                        "retry": 0
+                    }
+                }]
+            },
+            "DrawTagChanged":
+            {
+                "consumers": [
+                {
+                    "group_name": "LinkDraw",
+                    "process_num": 1,
+                    "offline": 0,
+                    "from_beginning": 0,
+                    "callback":
+                    {
+                        "call_type": "swoole",
+                        "cmd": "/link_draw/v1/Notify/tag_change",
+                        "timeout": "500",
+                        "retry": 0
+                    }
+                }]
+            },
+            "VCPlayNotify":
+            {
+                "consumers": [
+                {
+                    "group_name": "VideoGroup",
+                    "process_num": 2,
+                    "from_beginning": 0,
+                    "offline": 0,
+                    "callback":
+                    {
+                        "call_type": "swoole",
+                        "cmd": "/clip/v1/Notify/onPlay",
+                        "timeout": "100",
+                        "retry": 0
+                    }
+                },
+                {
+                    "group_name": "RecordGroup",
+                    "process_num": 2,
+                    "from_beginning": 0,
+                    "callback":
+                    {
+                        "call_type": "swoole",
+                        "cmd": "/record/v1/Notify/onPlay",
+                        "timeout": "100",
+                        "retry": 0
+                    }
+                }]
+            },
+            "SendGift":
+            {
+                "consumers": [
+                {
+                    "group_name": "MasterGiftCount_CG",
+                    "process_num": 1,
+                    "from_beginning": 0,
+                    "offline": 0,
+                    "consume_mode": "error_continue",
+                    "retry":
+                    {
+                        "mode": "line",
+                        "interval": 1000,
+                        "max_times ": 5
+                    },
+                    "callback":
+                    {
+                        "call_type": "swoole",
+                        "cmd": "/gift/v1/Notify/masterGiftCount",
+                        "timeout": "1000"
+                    }
+                },
+                {
+                    "group_name": "Room_Gift_CG",
+                    "process_num": 1,
+                    "from_beginning": 0,
+                    "offline": 0,
+                    "consume_mode": "error_continue",
+                    "retry":
+                    {
+                        "mode": "line",
+                        "interval": 300,
+                        "max_times ": 5
+                    },
+                    "callback":
+                    {
+                        "call_type": "swoole",
+                        "cmd": "/room/v1/Consumer/receiveGift",
+                        "timeout": "1000"
+                    }
+                },
+                {
+                    "group_name": "Activity_CG",
+                    "process_num": 1,
+                    "from_beginning": 0,
+                    "offline": 0,
+                    "consume_mode": "error_continue",
+                    "retry":
+                    {
+                        "mode": "none",
+                        "interval": 100,
+                        "max_times ": 3
+                    },
+                    "callback":
+                    {
+                        "call_type": "swoole",
+                        "cmd": "/activity/v1/Notify/sendGift",
+                        "timeout": "1000"
+                    }
+                },
+                {
+                    "group_name": "RankDB_CG",
+                    "process_num": 1,
+                    "from_beginning": 0,
+                    "offline": 0,
+                    "consume_mode": "error_continue",
+                    "retry":
+                    {
+                        "mode": "line",
+                        "interval": 100,
+                        "max_times ": 3
+                    },
+                    "callback":
+                    {
+                        "call_type": "swoole",
+                        "cmd": "/rankdb/v1/Notify/sendGift",
+                        "timeout": "1000"
+                    }
+                },
+                {
+                    "group_name": "Master_CG",
+                    "process_num": 1,
+                    "from_beginning": 0,
+                    "offline": 0,
+                    "consume_mode": "error_continue",
+                    "retry":
+                    {
+                        "mode": "none",
+                        "interval": 100,
+                        "max_times ": 3
+                    },
+                    "callback":
+                    {
+                        "call_type": "swoole",
+                        "cmd": "/gift/v1/Notify/master",
+                        "timeout": "1000"
+                    }
+                },
+                {
+                    "group_name": "User_CG",
+                    "process_num": 1,
+                    "from_beginning": 0,
+                    "offline": 0,
+                    "consume_mode": "error_continue",
+                    "retry":
+                    {
+                        "mode": "none",
+                        "interval": 100,
+                        "max_times ": 3
+                    },
+                    "callback":
+                    {
+                        "call_type": "swoole",
+                        "cmd": "/gift/v1/Notify/user",
+                        "timeout": "1000"
+                    }
+                },
+                {
+                    "group_name": "Gift_CG",
+                    "process_num": 1,
+                    "from_beginning": 0,
+                    "offline": 0,
+                    "consume_mode": "error_continue",
+                    "retry":
+                    {
+                        "mode": "none",
+                        "interval": 100,
+                        "max_times ": 3
+                    },
+                    "callback":
+                    {
+                        "call_type": "swoole",
+                        "cmd": "/gift/v1/Notify/broadcast",
+                        "timeout": "1000"
+                    }
+                },
+                {
+                    "group_name": "Room_CG",
+                    "process_num": 1,
+                    "from_beginning": 0,
+                    "offline": 0,
+                    "consume_mode": "error_continue",
+                    "retry":
+                    {
+                        "mode": "none",
+                        "interval": 100,
+                        "max_times ": 3
+                    },
+                    "callback":
+                    {
+                        "call_type": "swoole",
+                        "cmd": "/gift/v1/Notify/room",
+                        "timeout": "1000"
+                    }
+                },
+                {
+                    "group_name": "WishBottle_CG",
+                    "process_num": 1,
+                    "from_beginning": 0,
+                    "offline": 0,
+                    "consume_mode": "error_continue",
+                    "retry":
+                    {
+                        "mode": "none",
+                        "interval": 100,
+                        "max_times ": 3
+                    },
+                    "callback":
+                    {
+                        "call_type": "swoole",
+                        "cmd": "/live_user/v0/WishBottle/onSendGift",
+                        "timeout": "1000"
+                    }
+                },
+                {
+                    "group_name": "UserIntimacy_CG",
+                    "process_num": 1,
+                    "from_beginning": 0,
+                    "offline": 0,
+                    "callback":
+                    {
+                        "call_type": "swoole",
+                        "cmd": "/user/v1/Notify/gift_intimacy",
+                        "timeout": "200",
+                        "retry": 0
+                    }
+                },
+                {
+                    "group_name": "Lottery_CG",
+                    "process_num": 1,
+                    "from_beginning": 0,
+                    "offline": 0,
+                    "consume_mode": "error_continue",
+                    "retry":
+                    {
+                        "mode": "none",
+                        "interval": 100,
+                        "max_times ": 3
+                    },
+                    "callback":
+                    {
+                        "call_type": "swoole",
+                        "cmd": "/lottery/v1/Notify/sendGift",
+                        "timeout": "1000"
+                    }
+                }]
+            },
+            "DrawStatusChanged":
+            {
+                "consumers": [
+                {
+                    "group_name": "LinkDraw",
+                    "process_num": 1,
+                    "offline": 0,
+                    "from_beginning": 0,
+                    "callback":
+                    {
+                        "call_type": "swoole",
+                        "cmd": "/link_draw/v1/Notify/draw_status_change",
+                        "timeout": "500",
+                        "retry": 0
+                    }
+                },
+                {
+                    "group_name": "LinkDrawReject",
+                    "process_num": 1,
+                    "offline": 0,
+                    "from_beginning": 0,
+                    "callback":
+                    {
+                        "call_type": "swoole",
+                        "cmd": "/link_draw/v1/Notify/reject_notify",
+                        "timeout": "500",
+                        "retry": 0
+                    }
+                },
+                {
+                    "group_name": "PhotoActivity",
+                    "process_num": 1,
+                    "from_beginning": 0,
+                    "callback":
+                    {
+                        "call_type": "swoole",
+                        "cmd": "/photo_activity/v1/Notify/enroll",
+                        "timeout": "500",
+                        "retry": 0
+                    }
+                },
+                {
+                    "group_name": "LinkDrawSearch",
+                    "process_num": 1,
+                    "offline": 0,
+                    "from_beginning": 0,
+                    "callback":
+                    {
+                        "call_type": "swoole",
+                        "cmd": "/link_draw/v1/Notify/draw_search_change",
+                        "timeout": "500",
+                        "retry": 0
+                    }
+                }]
+            },
+            "ClipVideoSendIm":
+            {
+                "consumers": [
+                {
+                    "group_name": "LinkDynamic",
+                    "process_num": 1,
+                    "offline": 0,
+                    "from_beginning": 0,
+                    "consume_mode": "error_continue",
+                    "retry":
+                    {
+                        "mode": "line",
+                        "interval": 1000,
+                        "max_times": 3
+                    },
+                    "callback":
+                    {
+                        "call_type": "swoole",
+                        "cmd": "/link_dynamic/v1/Dynamic/clip_live_notify",
+                        "timeout": "501",
+                        "retry": 0
+                    }
+                }]
+            },
+            "RoomStatusNotifyNew":
+            {
+                "consumers": [
+                {
+                    "group_name": "RankDB_CG",
+                    "process_num": 1,
+                    "from_beginning": 0,
+                    "offline": 0,
+                    "consume_mode": "error_continue",
+                    "retry":
+                    {
+                        "mode": "none",
+                        "interval": 100,
+                        "max_times ": 3
+                    },
+                    "callback":
+                    {
+                        "call_type": "swoole",
+                        "cmd": "/rankdb/v1/Notify/roomOnlineNotify",
+                        "timeout": "500",
+                        "retry": 0
+                    }
+                },
+                {
+                    "group_name": "MonitorService",
+                    "process_num": 1,
+                    "from_beginning": 0,
+                    "offline": 0,
+                    "consume_mode": "error_continue",
+                    "retry":
+                    {
+                        "mode": "none",
+                        "interval": 100,
+                        "max_times ": 3
+                    },
+                    "callback":
+                    {
+                        "call_type": "swoole",
+                        "cmd": "/monitor/v0/Message/synAnthor",
+                        "timeout": "500",
+                        "retry": 0
+                    }
+                }]
+            },
+            "MonitorData":
+            {
+                "consumers": [
+                {
+                    "group_name": "Monitor_CG",
+                    "process_num": 1,
+                    "from_beginning": 0,
+                    "offline": 0,
+                    "consume_mode": "error_continue",
+                    "retry":
+                    {
+                        "mode": "line",
+                        "interval": 100,
+                        "max_times ": 3
+                    },
+                    "callback":
+                    {
+                        "call_type": "swoole",
+                        "cmd": "/monitor/v0/Notify/getData",
+                        "timeout": "300"
+                    }
+                }]
+            },
+            "MonitorRoomGiftNum":
+            {
+                "consumers": [
+                {
+                    "group_name": "Monitor_CG",
+                    "process_num": 1,
+                    "from_beginning": 0,
+                    "offline": 0,
+                    "consume_mode": "error_continue",
+                    "retry":
+                    {
+                        "mode": "line",
+                        "interval": 100,
+                        "max_times ": 3
+                    },
+                    "callback":
+                    {
+                        "call_type": "swoole",
+                        "cmd": "/monitor/v0/Notify/getRoomByGift",
+                        "timeout": "300"
+                    }
+                }]
+            },
+            "RoomOnlineNotify":
+            {
+                "consumers": [
+                {
+                    "group_name": "LinkDynamic",
+                    "process_num": 4,
+                    "offline": 0,
+                    "from_beginning": 0,
+                    "consume_mode": "error_continue",
+                    "retry":
+                    {
+                        "mode": "line",
+                        "interval": 1000,
+                        "max_times": 3
+                    },
+                    "callback":
+                    {
+                        "call_type": "swoole",
+                        "cmd": "/link_dynamic/v1/Dynamic/clip_live_notify",
+                        "timeout": "500",
+                        "retry": 0
+                    }
+                },
+                {
+                    "group_name": "Activity_CG",
+                    "process_num": 1,
+                    "from_beginning": 0,
+                    "offline": 0,
+                    "consume_mode": "error_continue",
+                    "retry":
+                    {
+                        "mode": "none",
+                        "interval": 100,
+                        "max_times ": 3
+                    },
+                    "callback":
+                    {
+                        "call_type": "swoole",
+                        "cmd": "/activity/v1/Notify/roomOnlineNotify",
+                        "timeout": "500",
+                        "retry": 0
+                    }
+                }]
+            },
+            "VipChangeNotify":
+            {
+                "consumers": [
+                {
+                    "group_name": "Wallet_CG",
+                    "process_num": 1,
+                    "from_beginning": 0,
+                    "offline": 0,
+                    "consume_mode": "error_continue",
+                    "retry":
+                    {
+                        "mode": "none",
+                        "interval": 100,
+                        "max_times ": 1
+                    },
+                    "callback":
+                    {
+                        "call_type": "swoole",
+                        "cmd": "/wallet/v0/Balance/vip",
+                        "timeout": "500",
+                        "retry": 0
+                    }
+                },
+                {
+                    "group_name": "Danmaku_CG",
+                    "process_num": 1,
+                    "from_beginning": 0,
+                    "offline": 0,
+                    "consume_mode": "error_continue",
+                    "retry":
+                    {
+                        "mode": "none",
+                        "interval": 100,
+                        "max_times ": 1
+                    },
+                    "callback":
+                    {
+                        "call_type": "swoole",
+                        "cmd": "/live_user/v0/Notify/onVipChange",
+                        "timeout": "200",
+                        "retry": 0
+                    }
+                }]
+            },
+            "DynamicPost":
+            {
+                "consumers": [
+                {
+                    "group_name": "Dynamic",
+                    "process_num": 1,
+                    "from_beginning": 1,
+                    "consume_mode": "error_stop",
+                    "offline": 0,
+                    "retry":
+                    {
+                        "mode": "line",
+                        "interval": 1000,
+                        "max_times": -1
+                    },
+                    "callback":
+                    {
+                        "call_type": "swoole",
+                        "cmd": "/dynamic_sub/v1/dynamic_sub/clip_pic_sub",
+                        "timeout": "500",
+                        "retry": 1
+                    }
+                }]
+            },
+            "ReportEvent":
+            {
+                "consumers": [
+                {
+                    "group_name": "topic_sub_qa01",
+                    "process_num": 1,
+                    "from_beginning": 1,
+                    "consume_mode": "error_continue",
+                    "offline": 0,
+                    "retry":
+                    {
+                        "mode": "line",
+                        "interval": 1000,
+                        "max_times": 1
+                    },
+                    "callback":
+                    {
+                        "call_type": "swoole",
+                        "cmd": "/topic_sub/v1/topic_sub/report_sub",
+                        "timeout": "500",
+                        "retry": 0
+                    }
+                },
+                {
+                    "group_name": "topic_mgr",
+                    "process_num": 1,
+                    "from_beginning": 1,
+                    "consume_mode": "error_stop",
+                    "offline": 0,
+                    "retry":
+                    {
+                        "mode": "line",
+                        "interval": 1000,
+                        "max_times": -1
+                    },
+                    "callback":
+                    {
+                        "call_type": "swoole",
+                        "cmd": "/topic_mgr/v1/topic_mgr/consume_report",
+                        "timeout": "500",
+                        "retry": 1
+                    }
+                }]
+            },
+            "PgcEpisodePush-T":
+            {
+                "queue_type": "databus",
+                "server_info":
+                {
+                    "broker":
+                    {
+                        "ip": "172.18.33.50",
+                        "port": 6205
+                    },
+                    "appsecret": "0QOzenTvoG0oJESFHPBt",
+                    "appkey": "0QOzenTvoG0oJESFHPBs"
+                },
+                "consumers": [
+                {
+                    "group_name": "PgcEpisodePush-Dynamic-S",
+                    "process_num": 1,
+                    "from_beginning": 0,
+                    "allow_table_pattern": "",
+                    "consume_mode": "error_stop",
+                    "offline": 0,
+                    "retry":
+                    {
+                        "mode": "line",
+                        "interval": 1000,
+                        "max_times": -1
+                    },
+                    "callback":
+                    {
+                        "call_type": "swoole",
+                        "cmd": "/dynamic_sub/v1/dynamic_sub/bangumi_sub",
+                        "timeout": "100"
+                    }
+                }]
+            },
+            "Relation-T":
+            {
+                "queue_type": "databus",
+                "server_info":
+                {
+                    "broker":
+                    {
+                        "ip": "172.16.33.158",
+                        "port": 6205
+                    },
+                    "appkey": "ec4c0820d525d67b",
+                    "appsecret": "2bdf3bd4ecab041b5d5640a1da4f7f81"
+                },
+                "consumers": [
+                {
+                    "group_name": "Relation-LiveLive-S",
+                    "process_num": 1,
+                    "from_beginning": 0,
+                    "offline": 1,
+                    "allow_table_pattern": "/user_relation_mid_.*/",
+                    "callback":
+                    {
+                        "call_type": "swoole",
+                        "cmd": "/feed/v1/Notify/on_relation_changed",
+                        "timeout": "100",
+                        "retry": 0
+                    }
+                }]
+            },
+            "CommTemplate-T":
+            {
+                "queue_type": "databus",
+                "server_info":
+                {
+                    "broker":
+                    {
+                        "ip": "172.18.33.50",
+                        "port": 6205
+                    },
+                    "appsecret": "25315412f6e2d8e81196df10994d2352",
+                    "appkey": "bf2e764b5ee08188"
+                },
+                "consumers": [
+                {
+                    "group_name": "CommTemplate-LinkDynamic-Dynamic-S",
+                    "process_num": 1,
+                    "from_beginning": 0,
+                    "allow_table_pattern": "",
+                    "consume_mode": "error_stop",
+                    "offline": 0,
+                    "retry":
+                    {
+                        "mode": "line",
+                        "interval": 1000,
+                        "max_times": -1
+                    },
+                    "callback":
+                    {
+                        "call_type": "swoole",
+                        "cmd": "/dynamic_sub/v1/dynamic_sub/common_template_sub",
+                        "timeout": "100"
+                    }
+                }]
+            },
+            "MusicNewsCard-T":
+            {
+                "queue_type": "databus",
+                "server_info":
+                {
+                    "broker":
+                    {
+                        "ip": "172.18.33.50",
+                        "port": 6205
+                    },
+                    "appsecret": "0QRK5Wa7x5BbpOnz51bX",
+                    "appkey": "0QRK5Wa7x5BbpOnz51bW"
+                },
+                "consumers": [
+                {
+                    "group_name": "MusicNewsCard-OpenPlatDev-S",
+                    "process_num": 1,
+                    "from_beginning": 0,
+                    "consume_mode": "error_stop",
+                    "offline": 0,
+                    "retry":
+                    {
+                        "mode": "line",
+                        "interval": 1000,
+                        "max_times": 10
+                    },
+                    "callback":
+                    {
+                        "call_type": "swoole",
+                        "cmd": "/dynamic_sub/v1/dynamic_sub/music_sub",
+                        "timeout": "100"
+                    }
+                }]
+            },
+            "ArchiveResult-T":
+            {
+                "queue_type": "databus",
+                "server_info":
+                {
+                    "broker":
+                    {
+                        "ip": "172.18.33.50",
+                        "port": 6205
+                    },
+                    "appsecret": "0QaBS3Smy7KPwG1nFPTf",
+                    "appkey": "0QaBS3Smy7KPwG1nFPTe"
+                },
+                "consumers": [
+                {
+                    "group_name": "ArchiveResult-DynamicDev-S",
+                    "process_num": 1,
+                    "from_beginning": 0,
+                    "offline": 1,
+                    "allow_table_pattern": "/archive/",
+                    "consume_mode": "error_continue",
+                    "retry":
+                    {
+                        "mode": "line",
+                        "interval": 1000,
+                        "max_times": 3
+                    },
+                    "callback":
+                    {
+                        "call_type": "swoole",
+                        "cmd": "/link_dynamic/v1/Dynamic/archive_notify",
+                        "timeout": "100"
+                    }
+                }]
+            },
+            "Article-T":
+            {
+                "queue_type": "databus",
+                "server_info":
+                {
+                    "broker":
+                    {
+                        "ip": "172.18.33.50",
+                        "port": 6205
+                    },
+                    "appsecret": "0QaBS3Smy7KPwG1nFPTf",
+                    "appkey": "0QaBS3Smy7KPwG1nFPTe"
+                },
+                "consumers": [
+                {
+                    "group_name": "Article-DynamicDev-S",
+                    "process_num": 1,
+                    "from_beginning": 0,
+                    "allow_table_pattern": "/filtered_articles/",
+                    "consume_mode": "error_stop",
+                    "offline": 0,
+                    "retry":
+                    {
+                        "mode": "line",
+                        "interval": 1000,
+                        "max_times": -1
+                    },
+                    "callback":
+                    {
+                        "call_type": "swoole",
+                        "cmd": "/dynamic_sub/v1/dynamic_sub/article_sub",
+                        "timeout": "100"
+                    }
+                }]
+            },
+            "StatReply-T":
+            {
+                "queue_type": "databus",
+                "server_info":
+                {
+                    "broker":
+                    {
+                        "ip": "172.18.33.50",
+                        "port": 6205
+                    },
+                    "appsecret": "25315412f6e2d8e81196df10994d2352",
+                    "appkey": "bf2e764b5ee08188"
+                },
+                "consumers": [
+                {
+                    "group_name": "StatReply-LinkDynamic-S",
+                    "process_num": 1,
+                    "from_beginning": 0,
+                    "allow_table_pattern": "",
+                    "consume_mode": "error_continue",
+                    "offline": 0,
+                    "retry":
+                    {
+                        "mode": "none",
+                        "interval": 1000,
+                        "max_times": -1
+                    },
+                    "callback":
+                    {
+                        "call_type": "swoole",
+                        "cmd": "/topic_sub/v1/topic_sub/reply_sub",
+                        "timeout": "100"
+                    }
+                }]
+            },
+            "StatLike-T":
+            {
+                "queue_type": "databus",
+                "server_info":
+                {
+                    "broker":
+                    {
+                        "ip": "172.18.33.50",
+                        "port": 6205
+                    },
+                    "appsecret": "25315412f6e2d8e81196df10994d2352",
+                    "appkey": "bf2e764b5ee08188"
+                },
+                "consumers": [
+                {
+                    "group_name": "StatLike-LinkDynamic-S",
+                    "process_num": 1,
+                    "from_beginning": 0,
+                    "allow_table_pattern": "",
+                    "consume_mode": "error_continue",
+                    "offline": 0,
+                    "retry":
+                    {
+                        "mode": "none",
+                        "interval": 1000,
+                        "max_times": -1
+                    },
+                    "callback":
+                    {
+                        "call_type": "swoole",
+                        "cmd": "/topic_sub/v1/topic_sub/like_sub",
+                        "timeout": "100"
+                    }
+                }]
+            },
+            "DanmuNotify":
+            {
+                "consumers": [
+                {
+                    "group_name": "danmu",
+                    "process_num": 1,
+                    "from_beginning": 0,
+                    "callback":
+                    {
+                        "call_type": "swoole",
+                        "cmd": "/danmu/v1/Notify/onSend",
+                        "timeout": "500",
+                        "retry": 0
+                    }
+                }]
+            },
+            "CommentRegister":
+            {
+                "consumers": [
+                {
+                    "group_name": "comment",
+                    "process_num": 1,
+                    "from_beginning": 0,
+                    "offline": 0,
+                    "callback":
+                    {
+                        "call_type": "swoole",
+                        "cmd": "/comment/v1/Notify/register",
+                        "timeout": "500"
+                    }
+                }]
+            },
+            "LinkGroupAsyncReq":
+            {
+                "consumers": [
+                {
+                    "group_name": "LinkGroup",
+                    "process_num": 1,
+                    "from_beginning": 0,
+                    "callback":
+                    {
+                        "call_type": "swoole",
+                        "cmd": "/link_group/v1/Event/async_req",
+                        "timeout": "800",
+                        "retry": 0
+                    }
+                }]
+            },
+            "LiveUserMedalLevelChange":
+            {
+                "consumers": [
+                {
+                    "group_name": "LinkGroup",
+                    "process_num": 8,
+                    "from_beginning": 0,
+                    "offline": 0,
+                    "callback":
+                    {
+                        "call_type": "swoole",
+                        "cmd": "/link_group/v1/Event/on_del_medal",
+                        "timeout": "800",
+                        "retry": 0
+                    }
+                },
+                {
+                    "group_name": "Activity_CG",
+                    "process_num": 1,
+                    "from_beginning": 0,
+                    "offline": 1,
+                    "consume_mode": "error_continue",
+                    "retry":
+                    {
+                        "mode": "line",
+                        "interval": 100,
+                        "max_times ": 3
+                    },
+                    "callback":
+                    {
+                        "call_type": "swoole",
+                        "cmd": "/activity/v1/Notify/levelRank",
+                        "timeout": "300"
+                    }
+                },
+                {
+                    "group_name": "RankDB_CG",
+                    "process_num": 1,
+                    "from_beginning": 0,
+                    "offline": 0,
+                    "consume_mode": "error_continue",
+                    "retry":
+                    {
+                        "mode": "none",
+                        "interval": 100,
+                        "max_times ": 3
+                    },
+                    "callback":
+                    {
+                        "call_type": "swoole",
+                        "cmd": "/rankdb/v1/Notify/levelRank",
+                        "timeout": "300"
+                    }
+                }]
+            },
+            "UserSpend":
+            {
+                "consumers": [
+                {
+                    "group_name": "Activity_CG",
+                    "process_num": 1,
+                    "from_beginning": 0,
+                    "offline": 0,
+                    "consume_mode": "error_continue",
+                    "retry":
+                    {
+                        "mode": "line",
+                        "interval": 100,
+                        "max_times ": 3
+                    },
+                    "callback":
+                    {
+                        "call_type": "swoole",
+                        "cmd": "/activity/v1/Notify/userSpend",
+                        "timeout": "300"
+                    }
+                },
+                {
+                    "group_name": "Danmaku_CG",
+                    "process_num": 1,
+                    "from_beginning": 0,
+                    "offline": 0,
+                    "consume_mode": "error_continue",
+                    "retry":
+                    {
+                        "mode": "line",
+                        "interval": 100,
+                        "max_times ": 3
+                    },
+                    "callback":
+                    {
+                        "call_type": "swoole",
+                        "cmd": "/live_user/v0/Notify/onNavigationBuy",
+                        "timeout": "300"
+                    }
+                },
+                {
+                    "group_name": "RankDB_CG",
+                    "process_num": 1,
+                    "from_beginning": 0,
+                    "offline": 0,
+                    "consume_mode": "error_continue",
+                    "retry":
+                    {
+                        "mode": "line",
+                        "interval": 100,
+                        "max_times ": 3
+                    },
+                    "callback":
+                    {
+                        "call_type": "swoole",
+                        "cmd": "/rankdb/v1/Notify/userSpend",
+                        "timeout": "300"
+                    }
+                },
+                {
+                    "group_name": "MasterGuardCount_CG",
+                    "process_num": 1,
+                    "from_beginning": 0,
+                    "offline": 0,
+                    "consume_mode": "error_continue",
+                    "retry":
+                    {
+                        "mode": "line",
+                        "interval": 1000,
+                        "max_times ": 5
+                    },
+                    "callback":
+                    {
+                        "call_type": "swoole",
+                        "cmd": "/gift/v1/Notify/masterGuardCount",
+                        "timeout": "300"
+                    }
+                },
+                {
+                    "group_name": "Lottery_CG",
+                    "process_num": 1,
+                    "from_beginning": 0,
+                    "offline": 0,
+                    "consume_mode": "error_continue",
+                    "retry":
+                    {
+                        "mode": "line",
+                        "interval": 100,
+                        "max_times ": 3
+                    },
+                    "callback":
+                    {
+                        "call_type": "swoole",
+                        "cmd": "/lottery/v0/Notify/notifyGuard",
+                        "timeout": "1000"
+                    }
+                }]
+            },
+            "OneLiveRoomAreaChange":
+            {
+                "consumers": [
+                {
+                    "group_name": "Room_Area_CG",
+                    "process_num": 1,
+                    "from_beginning": 0,
+                    "offline": 0,
+                    "consume_mode": "error_continue",
+                    "retry":
+                    {
+                        "mode": "none",
+                        "interval": 100,
+                        "max_times ": 3
+                    },
+                    "callback":
+                    {
+                        "call_type": "swoole",
+                        "cmd": "room/v1/Consumer/areaChange",
+                        "timeout": "300"
+                    }
+                }]
+            },
+            "UserTask":
+            {
+                "consumers": [
+                {
+                    "group_name": "Activity_CG",
+                    "process_num": 1,
+                    "from_beginning": 0,
+                    "offline": 0,
+                    "consume_mode": "error_continue",
+                    "retry":
+                    {
+                        "mode": "none",
+                        "interval": 100,
+                        "max_times ": 3
+                    },
+                    "callback":
+                    {
+                        "call_type": "swoole",
+                        "cmd": "/activity/v1/Notify/userTask",
+                        "timeout": "300"
+                    }
+                }]
+            },
+            "VcCloudNotify":
+            {
+                "consumers": [
+                {
+                    "group_name": "ClipCloudNotify",
+                    "process_num": 2,
+                    "from_beginning": 0,
+                    "offline": 0,
+                    "callback":
+                    {
+                        "call_type": "swoole",
+                        "cmd": "/clip/v1/Notify/onVideoCloudNoitfy",
+                        "timeout": "800",
+                        "retry": 1
+                    }
+                }]
+            },
+            "VcVideoChange":
+            {
+                "consumers": [
+                {
+                    "group_name": "VideoChangeClip",
+                    "process_num": 1,
+                    "from_beginning": 0,
+                    "callback":
+                    {
+                        "call_type": "swoole",
+                        "cmd": "/clip/v0/Notify/onVideoStatusChange",
+                        "timeout": "800"
+                    }
+                },
+                {
+                    "group_name": "VideoChangeOper",
+                    "process_num": 1,
+                    "from_beginning": 0,
+                    "callback":
+                    {
+                        "call_type": "swoole",
+                        "cmd": "/oper/v0/Notify/onVideoStatusChange",
+                        "timeout": "800"
+                    }
+                },
+                {
+                    "group_name": "VideoChangeClipFeed",
+                    "process_num": 1,
+                    "from_beginning": 0,
+                    "callback":
+                    {
+                        "call_type": "swoole",
+                        "cmd": "/clip_feed/v0/Notify/onVideoStatusChange",
+                        "timeout": "800"
+                    }
+                }]
+            },
+            "RecordVideoNotify":
+            {
+                "consumers": [
+                {
+                    "group_name": "Stream_CG",
+                    "process_num": 1,
+                    "from_beginning": 0,
+                    "offline": 0,
+                    "consume_mode": "error_continue",
+                    "retry":
+                    {
+                        "mode": "line",
+                        "interval": 100,
+                        "max_times ": 3
+                    },
+                    "callback":
+                    {
+                        "call_type": "swoole",
+                        "cmd": "/live_stream/v1/Notify/addRecord",
+                        "timeout": "300"
+                    }
+                }]
+            }
+        }
+    },
+    "dep_services":
+    {
+        "mc_agent_svr":
+        {
+            "host_list": [
+                "127.0.0.1:1234"
+            ],
+            "allow_groups": [
+                "any"
+            ],
+            "deny_groups": [
+
+            ],
+            "timeout": 2
+        },
+"bplus_es": {
+  "host_list": [],
+  "allow_groups": [
+    "any"
+  ],
+  "deny_groups": [],
+  "timeout": 1
+},
+        "oper":
+        {
+            "host_list": [
+
+            ],
+            "allow_groups": [
+                "any"
+            ],
+            "deny_groups": [
+
+            ],
+            "timeout": 1
+        },
+        "clip_feed":
+        {
+            "host_list": [
+
+            ],
+            "allow_groups": [
+                "any"
+            ],
+            "deny_groups": [
+
+            ],
+            "timeout": 1
+        },
+        "gift":
+        {
+            "host_list": [
+
+            ],
+            "allow_groups": [
+                "any"
+            ],
+            "deny_groups": [
+
+            ],
+            "timeout": 1
+        },
+        "room":
+        {
+            "host_list": [
+
+            ],
+            "allow_groups": [
+                "any"
+            ],
+            "deny_groups": [
+
+            ],
+            "timeout": 1
+        },
+        "topic_sub":
+        {
+            "host_list": [
+
+            ],
+            "allow_groups": [
+                "any"
+            ],
+            "deny_groups": [
+
+            ],
+            "timeout": 1
+        },
+        "live_stream":
+        {
+            "host_list": [
+
+            ],
+            "allow_groups": [
+                "any"
+            ],
+            "deny_groups": [
+
+            ],
+            "timeout": 1
+        },
+        "rankdb":
+        {
+            "host_list": [
+
+            ],
+            "allow_groups": [
+                "any"
+            ],
+            "deny_groups": [
+
+            ],
+            "timeout": 1
+        },
+        "activity":
+        {
+            "host_list": [
+
+            ],
+            "allow_groups": [
+                "any"
+            ],
+            "deny_groups": [
+
+            ],
+            "timeout": 1
+        },
+        "link_group":
+        {
+            "host_list": [
+
+            ],
+            "allow_groups": [
+                "any"
+            ],
+            "deny_groups": [
+
+            ],
+            "timeout": 1
+        },
+        "databus_sub":
+        {
+            "host_list": [
+
+            ],
+            "allow_groups": [
+                "any"
+            ],
+            "deny_groups": [
+
+            ],
+            "timeout": 1
+        },
+        "photo_activity":
+        {
+            "host_list": [
+
+            ],
+            "allow_groups": [
+                "any"
+            ],
+            "deny_groups": [
+
+            ],
+            "timeout": 1
+        },
+        "userext":
+        {
+            "host_list": [
+
+            ],
+            "allow_groups": [
+                "any"
+            ],
+            "deny_groups": [
+
+            ],
+            "timeout": 1
+        },
+        "publisher":
+        {
+            "allow_groups": [
+                "any"
+            ],
+            "host_list": [
+
+            ],
+            "deny_groups": [
+
+            ],
+            "timeout": 100
+        },
+        "feed":
+        {
+            "allow_groups": [
+
+            ],
+            "deny_groups": [
+
+            ],
+            "timeout": 100
+        },
+        "relation":
+        {
+            "allow_groups": [
+
+            ],
+            "deny_groups": [
+
+            ],
+            "timeout": 100
+        },
+        "relation_apply":
+        {
+            "allow_groups": [
+
+            ],
+            "deny_groups": [
+
+            ],
+            "timeout": 100
+        },
+        "fans_medal":
+        {
+            "allow_groups": [
+                "any"
+            ],
+            "deny_groups": [
+
+            ],
+            "timeout": 100
+        },
+        "banned_service":
+        {
+            "allow_groups": [
+                "any"
+            ],
+            "deny_groups": [
+
+            ],
+            "timeout": 100
+        },
+        "monitor":
+        {
+            "allow_groups": [
+                "any"
+            ],
+            "deny_groups": [
+
+            ],
+            "timeout": 100
+        },
+        "bplus_banned":
+        {
+            "allow_groups": [
+                "any"
+            ],
+            "deny_groups": [
+
+            ],
+            "timeout": 100
+        },
+        "danmu":
+        {
+            "allow_groups": [
+                "any"
+            ],
+            "deny_groups": [
+
+            ],
+            "timeout": 100
+        },
+        "link_draw":
+        {
+            "host_list": [
+
+            ],
+            "allow_groups": [
+                "any"
+            ],
+            "deny_groups": [
+
+            ],
+            "timeout": 100
+        },
+        "clip":
+        {
+            "allow_groups": [
+                "any"
+            ],
+            "deny_groups": [
+
+            ],
+            "timeout": 100
+        },
+        "record":
+        {
+            "allow_groups": [
+                "any"
+            ],
+            "deny_groups": [
+
+            ],
+            "timeout": 100
+        },
+        "user":
+        {
+            "allow_groups": [
+                "any"
+            ],
+            "deny_groups": [
+
+            ],
+            "timeout": 101
+        },
+        "clip_gift":
+        {
+            "allow_groups": [
+                "any"
+            ],
+            "deny_groups": [
+
+            ],
+            "timeout": 100
+        },
+        "link_dynamic":
+        {
+            "allow_groups": [
+
+            ],
+            "deny_groups": [
+
+            ],
+            "timeout": 100
+        },
+        "dynamic_sub":
+        {
+            "balance_strategy": "round_robin",
+            "allow_groups": [
+
+            ],
+            "deny_groups": [
+
+            ],
+            "timeout": 209
+        },
+        "comment":
+        {
+            "allow_groups": [
+                "any"
+            ],
+            "deny_groups": [
+
+            ],
+            "timeout": 201
+        },
+        "wallet":
+        {
+            "allow_groups": [
+                "any"
+            ],
+            "deny_groups": [
+
+            ],
+            "timeout": 200
+        },
+        "live_user":
+        {
+            "allow_groups": [
+                "any"
+            ],
+            "deny_groups": [
+
+            ],
+            "timeout": 200
+        },
+        "lottery":
+        {
+            "host_list": [
+
+            ],
+            "allow_groups": [
+                "any"
+            ],
+            "deny_groups": [
+
+            ],
+            "timeout": 1
+        }
+    }
+}
