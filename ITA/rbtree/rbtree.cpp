@@ -84,6 +84,49 @@ void rbtree<T>::insert(T v){
 }
 
 template<typename T>
-void insert_fixup(Node_t<T>* node)
+static Node_t<T>* get_uncle(Node_t<T>* node){
+    return node->parent->left == node ? node->parent->right : node->parent->left;
+}
+
+
+template<typename T>
+static bool is_left(Node_t<T>* node){
+    return node->parent->left == node;
+}
+
+template<typename T>
+void rbtree<T>::insert_fixup(Node_t<T>* node)
 {
+    while(!node->parent->is_black){
+        if(!get_uncle(node)->is_black){
+        //case 1
+            node->is_black = true;
+            get_uncle(node)->is_black = true;
+            node = node->parent->parent;
+            node->is_black = false;
+            continue;
+        }
+        if(!is_left(node) && is_left(node->parent)){
+        //case 2
+            left_rotate(node->parent);
+            node = node->left;
+        }else if(is_left(node) && !is_left(node->parent)){
+        //mirror case 2
+            right_rotate(node->parent);
+            node = node->right;
+        }else if(is_left(node) && is_left(node->parent)){
+        //case 3
+            right_rotate(node->parent->parent);
+            node->parent->is_black = true;
+            node->parent->right->is_black = false;
+            break;
+        }else{
+        //mirror case 3
+            left_rotate(node->parent->parent);
+            node->parent->is_black = true;
+            node->parent->left->is_black = false;
+            break;
+        }
+    }
+    root->is_black = true;
 }
