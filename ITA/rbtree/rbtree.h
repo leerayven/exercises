@@ -11,8 +11,9 @@ struct Node_t{
 template<typename T>
 class rbtree{
 public:
-    void insert(T v);
-    bool remove(T v);
+    void insert(T v);//FIXME argument should be pointer to node
+    void remove(Node_t<T>* node);
+    void printTree();
     rbtree();
     ~rbtree();
 private:
@@ -20,8 +21,10 @@ private:
     void remove_fixup(Node_t<T>* node);
     void left_rotate(Node_t<T>* node);
     void right_rotate(Node_t<T>* node);
+    void transplant(Node_t<T>* origNode, Node_t<T>* newNode);
 
     Node_t<T>* root;
     Node_t<T>* nil;
+    
 };
 

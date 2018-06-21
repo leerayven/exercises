@@ -119,14 +119,64 @@ void rbtree<T>::insert_fixup(Node_t<T>* node)
             right_rotate(node->parent->parent);
             node->parent->is_black = true;
             node->parent->right->is_black = false;
-            break;
         }else{
         //mirror case 3
             left_rotate(node->parent->parent);
             node->parent->is_black = true;
             node->parent->left->is_black = false;
-            break;
         }
     }
     root->is_black = true;
+}
+
+template<typename T>
+void rbtree<T>::transplant(Node_t<T>* origNode, Node_t<T>* newNode)
+{
+    if(origNode == root){
+        root = newNode;
+        return;
+    }
+    if(is_left(origNode)){
+        origNode->parent->left = newNode;
+    }else{
+        origNode->parent->right = newNode;
+    }
+    if(newNode != nil){
+        newNode->parent = origNode->parent;
+    }
+}
+
+template<typename T>
+void rbtree<T>::remove(Node_t<T>* node)
+{
+    if(node->left == nil){
+        transplant(node, node->right);
+    }else if(node->right == nil){
+        transplant(node, node->left);
+    }else{
+        auto rightChild = node->right;
+        auto newSubRoot = rightChild;
+        while(newSubRoot->left != nil){
+            newSubRoot = newSubRoot->left;
+        }
+        if(newSubRoot != rightChild){
+            transplant(newSubRoot, newSubRoot->right);
+            newSubRoot->right = rightChild;
+            rightChild->parent = newSubRoot;
+        }
+        transplant(node, newSubRoot);    
+        newSubRoot->left = node->left;
+        node->left->parent = newSubRoot;
+    }
+    remove_fixup();
+}
+
+template<typename T>
+void rbtree<T>::remove(Node_t<T>* node)
+{
+}
+
+template<typename T>
+void rbtree<T>::remove_fixup(Node_t<T>* node)
+{
 }
