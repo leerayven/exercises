@@ -141,7 +141,7 @@ void rbtree<T>::transplant(Node_t<T>* origNode, Node_t<T>* newNode)
     }else{
         origNode->parent->right = newNode;
     }
-    if(newNode != nil){
+    if(newNode != nil){ // not necessary for rbtree since nil can be assigned any parent
         newNode->parent = origNode->parent;
     }
 }
@@ -149,9 +149,13 @@ void rbtree<T>::transplant(Node_t<T>* origNode, Node_t<T>* newNode)
 template<typename T>
 void rbtree<T>::remove(Node_t<T>* node)
 {
+    bool need_to_fixup = node->is_black;
+    auto fixup_node = nil;
     if(node->left == nil){
+        fixup_node = node->right;
         transplant(node, node->right);
     }else if(node->right == nil){
+        fixup_node = node->left;
         transplant(node, node->left);
     }else{
         auto rightChild = node->right;
@@ -159,6 +163,8 @@ void rbtree<T>::remove(Node_t<T>* node)
         while(newSubRoot->left != nil){
             newSubRoot = newSubRoot->left;
         }
+        need_to_fixup = newSubRoot->is_black;
+        fixup_node = newSubRoot->right;
         if(newSubRoot != rightChild){
             transplant(newSubRoot, newSubRoot->right);
             newSubRoot->right = rightChild;
@@ -167,8 +173,11 @@ void rbtree<T>::remove(Node_t<T>* node)
         transplant(node, newSubRoot);    
         newSubRoot->left = node->left;
         node->left->parent = newSubRoot;
+        newSubRoot->is_black = node->is_black;
     }
-    remove_fixup();
+    if(need_to_fixup){
+        remove_fixup(fixup_node);
+    }
 }
 
 template<typename T>
