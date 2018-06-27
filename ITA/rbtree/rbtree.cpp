@@ -210,6 +210,24 @@ template<typename T>
 void rbtree<T>::remove_fixup(Node_t<T>* node)
 {
     while(node->is_black && node->parent != nil){
+        TreeFixupState state = get_tree_state(node);
+        switch(state){
+        case TreeState_Case_1:
+            if(is_left(node)){
+                left_rotate(node->parent);
+                node->parent->is_black = false;
+                node->parent->parent->is_black = true;
+            }
+            break;
+        case TreeState_Case_2:
+            break;
+        case TreeState_Case_3:
+            break;
+        case TreeState_Case_4:
+            break;
+        default:
+            return;
+        }
     }
     node->is_black = true;
 }
