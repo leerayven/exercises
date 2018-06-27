@@ -180,12 +180,36 @@ void rbtree<T>::remove(Node_t<T>* node)
     }
 }
 
+enum TreeFixupState{
+    TreeState_Case_1 = 0,
+    TreeState_Case_2,
+    TreeState_Case_3,
+    TreeState_Case_4
+};
+
 template<typename T>
-void rbtree<T>::remove(Node_t<T>* node)
-{
+inline Node_t<T>* brother(Node_t<T>* node){
+    return is_left(node) ? node->parent->right : node->parent->left;
+}
+
+template<typename T>
+static TreeFixupState get_tree_state(Node_t<T>* node){
+    Node_t<T>* brother = brother(node);
+    if(brother->is_black == false) 
+        return TreeState_Case_1;
+    else if(brother->left->is_black && brother->right->is_black)
+        return TreeState_Case_2;
+    else if((is_left(node)&& brother->right->is_black == false)
+            || (is_left(node) == false && brother->left->is_black == false))
+        return TreeState_Case_4;
+    else 
+        return TreeState_Case_3;
 }
 
 template<typename T>
 void rbtree<T>::remove_fixup(Node_t<T>* node)
 {
+    while(node->is_black && node->parent != nil){
+    }
+    node->is_black = true;
 }
