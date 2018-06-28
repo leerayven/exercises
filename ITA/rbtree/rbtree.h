@@ -22,6 +22,7 @@ private:
     void left_rotate(Node_t<T>* node);
     void right_rotate(Node_t<T>* node);
     void transplant(Node_t<T>* origNode, Node_t<T>* newNode);
+    void delete_sub_tree(Node_t<T>* node);
 
     Node_t<T>* root;
     Node_t<T>* nil;

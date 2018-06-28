@@ -8,10 +8,23 @@ rbtree<T>::rbtree()
 }
 
 template<typename T>
+void rbtree<T>::delete_sub_tree(Node_t<T>* node){
+    if(node == nil)
+        return;
+    if(node->left != nil){
+        delete_sub_tree(node->left);
+    }
+    if(node->right != nil){
+        delete_sub_tree(node->right);
+    }
+    delete node;
+}
+
+template<typename T>
 rbtree<T>::~rbtree()
 {
     //delete the tree
-    
+    delete_sub_tree(root);
     delete nil;
 }
 
@@ -188,13 +201,13 @@ enum TreeFixupState{
 };
 
 template<typename T>
-inline Node_t<T>* brother(Node_t<T>* node){
+inline Node_t<T>* get_brother(Node_t<T>* node){
     return is_left(node) ? node->parent->right : node->parent->left;
 }
 
 template<typename T>
 static TreeFixupState get_tree_state(Node_t<T>* node){
-    Node_t<T>* brother = brother(node);
+    Node_t<T>* brother = get_brother(node);
     if(brother->is_black == false) 
         return TreeState_Case_1;
     else if(brother->left->is_black && brother->right->is_black)
@@ -220,14 +233,38 @@ void rbtree<T>::remove_fixup(Node_t<T>* node)
             }
             break;
         case TreeState_Case_2:
+            get_brother(node)->is_black = false;
+            node = node->parent;
             break;
         case TreeState_Case_3:
+            Node_t<T>* brother = get_brother(node);
+            if(is_left(brother)){
+                left_rotate(brother);
+            }else{
+                right_rotate(brother);
+            }
+            brother->is_black = false;
+            brother->parent->is_black = true;
             break;
         case TreeState_Case_4:
+            if(is_left(node)){
+                left_rotate(node->parent);
+            }else{
+                right_rotate(node->parent);
+            }
+            bool tmp_color = node->parent->is_black;
+            node->parent->is_black = node->parent->parent->is_black;
+            node->parent->parent->is_black = tmp_color;
+            get_brother(node->parent)->is_black = false;
             break;
         default:
             return;
         }
     }
     node->is_black = true;
+}
+
+int main(){
+    rbtree<int> tree;
+    return 0;
 }
