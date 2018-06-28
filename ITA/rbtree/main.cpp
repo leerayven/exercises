@@ -13,5 +13,11 @@ int main(){
     for(int i = 0; i != 100; ++i){
         tree.insert(rand());
     }
+    vector<int> heights;
+    tree.traverse_log(heights);
+    for(auto it=heights.begin(); it != heights.end(); ++it){
+        cout<<*it<<" ";
+    }
+    cout<<endl;
     return 0;
 }

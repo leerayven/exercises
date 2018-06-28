@@ -23,7 +23,7 @@ private:
     void right_rotate(Node_t<T>* node);
     void transplant(Node_t<T>* origNode, Node_t<T>* newNode);
     void delete_sub_tree(Node_t<T>* node);
-    void inner_traverse(Node_t<T>* node, std::vector<int>& heights);
+    void inner_traverse(Node_t<T>* node, std::vector<int>& heights, int counter);
 
     Node_t<T>* root;
     Node_t<T>* nil;
@@ -32,13 +32,26 @@ private:
 
 template<typename T>
 void rbtree<T>::traverse_log(std::vector<int>& heights){
-    inner_traverse(root, heights);
+    inner_traverse(root, heights, 0);
 }
 
 template<typename T>
-void rbtree<T>::inner_traverse(Node_t<T>* node, std::vector<int>& heights){
+void rbtree<T>::inner_traverse(Node_t<T>* node, std::vector<int>& heights, int counter){
     if(node->left != nil){
-        
+        if(node->is_black)
+            inner_traverse(node->left, heights, counter+1);
+        else
+            inner_traverse(node->left, heights, counter);
+    }
+    if(node->left == nil && node->right == nil){
+        int height = node->is_black ? counter+1 : counter;
+        heights.push_back(height);
+    }
+    if(node->right != nil){
+        if(node->is_black)
+            inner_traverse(node->right, heights, counter+1);
+        else
+            inner_traverse(node->right, heights, counter);
     }
 }
 
@@ -46,6 +59,7 @@ template<typename T>
 rbtree<T>::rbtree()
 {
     nil = new Node_t<T>();
+    nil->is_black = true;
     root = nil;
 }
 
@@ -304,8 +318,4 @@ void rbtree<T>::remove_fixup(Node_t<T>* node)
         }
     }
     node->is_black = true;
-}
-template<typename T>
-void rbtree<T>::printTree(){
-
 }
