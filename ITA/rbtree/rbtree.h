@@ -68,6 +68,8 @@ rbtree<T>::rbtree()
     nil->is_black = true;
     nil->left = nil;
     nil->right = nil;
+    nil->parent = nil;
+
     root = nil;
 }
 
@@ -188,6 +190,7 @@ void rbtree<T>::insert(T v){
     new_node->is_black = false;
     new_node->left = nil;
     new_node->right = nil;
+    new_node->parent = nil;
 
     Node_t<T>* parent = nil, *child = root;
     while(child != nil){
