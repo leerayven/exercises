@@ -1,3 +1,4 @@
+#include <iostream>
 #include <vector>
 template<typename T>
 struct Node_t{
@@ -13,7 +14,9 @@ class rbtree{
 public:
     void insert(T v);//FIXME argument should be pointer to node
     void remove(Node_t<T>* node);
-    void traverse_log(std::vector<int>& heights);
+    void traverse_leaves(std::vector<T>& leaf_values, std::vector<int>& heights);
+    void traverse(std::vector<T>& values, std::vector<int>& heights, std::vector<bool>& colors);
+    bool lookup(T v, int* black_height);
     rbtree();
     ~rbtree();
 private:
@@ -23,7 +26,9 @@ private:
     void right_rotate(Node_t<T>* node);
     void transplant(Node_t<T>* origNode, Node_t<T>* newNode);
     void delete_sub_tree(Node_t<T>* node);
-    void inner_traverse(Node_t<T>* node, std::vector<int>& heights, int counter);
+    void inner_traverse_leaves(Node_t<T>* node, std::vector<T>& leaf_values,\
+        std::vector<int>& heights, int counter);
+    void inner_traverse(Node_t<T>* root, std::vector<T>& values, std::vector<int>& heights, std::vector<bool>& colors, int height);
 
     Node_t<T>* root;
     Node_t<T>* nil;
@@ -31,27 +36,28 @@ private:
 };
 
 template<typename T>
-void rbtree<T>::traverse_log(std::vector<int>& heights){
-    inner_traverse(root, heights, 0);
+void rbtree<T>::traverse_leaves(std::vector<T>& leaf_values, std::vector<int>& heights){
+    inner_traverse_leaves(root, leaf_values, heights, 0);
 }
 
 template<typename T>
-void rbtree<T>::inner_traverse(Node_t<T>* node, std::vector<int>& heights, int counter){
+void rbtree<T>::inner_traverse_leaves(Node_t<T>* node, std::vector<T>& leaf_values, std::vector<int>& heights, int counter){
     if(node->left != nil){
         if(node->is_black)
-            inner_traverse(node->left, heights, counter+1);
+            inner_traverse_leaves(node->left, leaf_values, heights, counter+1);
         else
-            inner_traverse(node->left, heights, counter);
+            inner_traverse_leaves(node->left, leaf_values, heights, counter);
     }
     if(node->left == nil && node->right == nil){
         int height = node->is_black ? counter+1 : counter;
+        leaf_values.push_back(node->value);
         heights.push_back(height);
     }
     if(node->right != nil){
         if(node->is_black)
-            inner_traverse(node->right, heights, counter+1);
+            inner_traverse_leaves(node->right, leaf_values, heights, counter+1);
         else
-            inner_traverse(node->right, heights, counter);
+            inner_traverse_leaves(node->right, leaf_values, heights, counter);
     }
 }
 
@@ -60,6 +66,8 @@ rbtree<T>::rbtree()
 {
     nil = new Node_t<T>();
     nil->is_black = true;
+    nil->left = nil;
+    nil->right = nil;
     root = nil;
 }
 
@@ -85,6 +93,56 @@ rbtree<T>::~rbtree()
 }
 
 template<typename T>
+void rbtree<T>::traverse(std::vector<T>& values, std::vector<int>& heights, 
+    std::vector<bool>& colors)
+{
+    inner_traverse(root, values, heights, colors, 0);
+}
+
+template<typename T>
+void rbtree<T>::inner_traverse(Node_t<T>* root, std::vector<T>& values, std::vector<int>& heights,
+    std::vector<bool>& colors, int height)
+{
+    if(root == nil){
+        return;
+    }
+    if(root->is_black)
+        inner_traverse(root->left, values, heights, colors, height+1);
+    else
+        inner_traverse(root->left, values, heights, colors, height+1);
+
+    values.push_back(root->value);
+    heights.push_back(height);
+    colors.push_back(root->is_black);
+
+    if(root->is_black)
+        inner_traverse(root->right, values, heights, colors, height+1);
+    else
+        inner_traverse(root->right, values, heights, colors, height+1);
+}
+
+template<typename T>
+bool rbtree<T>::lookup(T v, int* black_height){
+    auto node = root;
+    *black_height = 0;
+    while(node != nil && node->value != v){
+        if(node->is_black) ++ *black_height;
+        if(v < node->value){
+            node = node->left;
+        }else{
+            node = node->right;
+        }
+    }
+    if(node == nil){
+        *black_height = 0;
+        return false;
+    }else{
+        *black_height = node->is_black ? (1+*black_height) : *black_height;
+        return true;
+    }
+}
+
+template<typename T>
 void rbtree<T>::left_rotate(Node_t<T>* node)
 {
     auto orig_right = node->right;
@@ -93,7 +151,7 @@ void rbtree<T>::left_rotate(Node_t<T>* node)
         node->right->parent = node;
     }
     orig_right->parent = node->parent;
-    if(node == root){
+    if(node->parent == nil){
         root = orig_right;
     }else if(node == node->parent->left){
         node->parent->left = orig_right;
@@ -112,23 +170,25 @@ void rbtree<T>::right_rotate(Node_t<T>* node)
     if(node->left != nil){
         node->left->parent = node;
     }
-    orig_left->right = node;
     orig_left->parent = node->parent;
-    node->parent = orig_left;
     if(node->parent == nil){
         root = orig_left;
-    }else if(orig_left->parent->left == node){
-        orig_left->parent->left = orig_left;
+    }else if(node == node->parent->left){
+        node->parent->left = orig_left;
     }else{
-        orig_left->parent->right = orig_left;
+        node->parent->right = orig_left;
     }
+    orig_left->right = node;
+    node->parent = orig_left;
 }
 
 template<typename T>
 void rbtree<T>::insert(T v){
     Node_t<T>* new_node = new Node_t<T>(v);
-    new_node->parent = nil;
+    new_node->is_black = false;
     new_node->left = nil;
+    new_node->right = nil;
+
     Node_t<T>* parent = nil, *child = root;
     while(child != nil){
         parent = child;
@@ -154,7 +214,8 @@ void rbtree<T>::insert(T v){
 
 template<typename T>
 static Node_t<T>* get_uncle(Node_t<T>* node){
-    return node->parent->left == node ? node->parent->right : node->parent->left;
+    return node->parent->parent->left == node->parent ? \
+        node->parent->parent->right : node->parent->parent->left;
 }
 
 
@@ -166,10 +227,11 @@ static bool is_left(Node_t<T>* node){
 template<typename T>
 void rbtree<T>::insert_fixup(Node_t<T>* node)
 {
-    while(!node->parent->is_black){
-        if(!get_uncle(node)->is_black){
+    while(node->parent->is_black == false){
+        if(get_uncle(node)->is_black == false){
         //case 1
-            node->is_black = true;
+            std::cout<<"case 1:"<<"node value:"<<node->value<<std::endl<<std::flush;
+            node->parent->is_black = true;
             get_uncle(node)->is_black = true;
             node = node->parent->parent;
             node->is_black = false;
@@ -177,19 +239,23 @@ void rbtree<T>::insert_fixup(Node_t<T>* node)
         }
         if(!is_left(node) && is_left(node->parent)){
         //case 2
+            std::cout<<"case 2:"<<"node value:"<<node->value<<std::endl<<std::flush;
             left_rotate(node->parent);
             node = node->left;
         }else if(is_left(node) && !is_left(node->parent)){
+            std::cout<<"case 2 mirror:"<<"node value:"<<node->value<<std::endl<<std::flush;
         //mirror case 2
             right_rotate(node->parent);
             node = node->right;
         }else if(is_left(node) && is_left(node->parent)){
         //case 3
+            std::cout<<"case 3:"<<"node value:"<<node->value<<std::endl<<std::flush;
             right_rotate(node->parent->parent);
             node->parent->is_black = true;
             node->parent->right->is_black = false;
         }else{
         //mirror case 3
+            std::cout<<"case 3 mirror:"<<"node value:"<<node->value<<std::endl<<std::flush;
             left_rotate(node->parent->parent);
             node->parent->is_black = true;
             node->parent->left->is_black = false;
@@ -315,7 +381,7 @@ void rbtree<T>::remove_fixup(Node_t<T>* node)
             break;
         default:
             return;
-        }
+       }
     }
     node->is_black = true;
 }
