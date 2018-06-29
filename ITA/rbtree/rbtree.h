@@ -16,7 +16,7 @@ public:
     void remove(Node_t<T>* node);
     void traverse_leaves(std::vector<T>& leaf_values, std::vector<int>& heights);
     void traverse(std::vector<T>& values, std::vector<int>& heights, std::vector<bool>& colors);
-    bool lookup(T v, int* black_height);
+    Node_t<T>* lookup(T v, int* black_height);
     rbtree();
     ~rbtree();
 private:
@@ -122,7 +122,7 @@ void rbtree<T>::inner_traverse(Node_t<T>* root, std::vector<T>& values, std::vec
 }
 
 template<typename T>
-bool rbtree<T>::lookup(T v, int* black_height){
+Node_t<T>* rbtree<T>::lookup(T v, int* black_height){
     auto node = root;
     *black_height = 0;
     while(node != nil && node->value != v){
@@ -135,10 +135,10 @@ bool rbtree<T>::lookup(T v, int* black_height){
     }
     if(node == nil){
         *black_height = 0;
-        return false;
+        return NULL;
     }else{
         *black_height = node->is_black ? (1+*black_height) : *black_height;
-        return true;
+        return node;
     }
 }
 
@@ -319,7 +319,7 @@ enum TreeFixupState{
     TreeState_Case_1 = 0,
     TreeState_Case_2,
     TreeState_Case_3,
-    TreeState_Case_4
+    TreeState_Case_4,
 };
 
 template<typename T>
@@ -346,6 +346,7 @@ void rbtree<T>::remove_fixup(Node_t<T>* node)
 {
     while(node->is_black && node->parent != nil){
         TreeFixupState state = get_tree_state(node);
+        Node_t<T>* brother = get_brother(node);
         switch(state){
         case TreeState_Case_1:
             if(is_left(node)){
@@ -355,11 +356,10 @@ void rbtree<T>::remove_fixup(Node_t<T>* node)
             }
             break;
         case TreeState_Case_2:
-            get_brother(node)->is_black = false;
+            brother->is_black = false;
             node = node->parent;
             break;
         case TreeState_Case_3:
-            Node_t<T>* brother = get_brother(node);
             if(is_left(brother)){
                 left_rotate(brother);
             }else{
@@ -374,9 +374,7 @@ void rbtree<T>::remove_fixup(Node_t<T>* node)
             }else{
                 right_rotate(node->parent);
             }
-            bool tmp_color = node->parent->is_black;
-            node->parent->is_black = node->parent->parent->is_black;
-            node->parent->parent->is_black = tmp_color;
+            std::swap(node->parent->is_black, node->parent->parent->is_black);
             get_brother(node->parent)->is_black = false;
             break;
         default:

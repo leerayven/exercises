@@ -1,4 +1,5 @@
 #include <stdlib.h>
+//#include <algorithm>
 #include <time.h>
 #include "rbtree.h"
 using namespace std;
@@ -38,8 +39,8 @@ int main(){
     vector<int> orig_values = {3, 73, 9, 8};
 #else
     vector<int> orig_values;
-    for(int i = 0; i != 100; ++i){
-        orig_values.push_back(rand()%10000);
+    for(int i = 0; i != 10; ++i){
+        orig_values.push_back(rand()%1000);
     }
 #endif
     for(uint32_t i = 0; i != orig_values.size(); ++i){
@@ -49,8 +50,18 @@ int main(){
 
     for(uint32_t i = 0; i != orig_values.size(); ++i){
         tree.insert(orig_values[i]);
-        cout<<endl<<"iterator:"<<i<<endl;
+//        cout<<endl<<"iterator:"<<i<<endl;
+//        printTreeInfo(tree);
+    }
+    printTreeInfo(tree);
+    for(;!orig_values.empty();){
+        int j = rand()%orig_values.size();
+        int target = orig_values[j];
+        int black_height;
+        Node_t<int>* target_node = tree.lookup(target, &black_height);
+        tree.remove(target_node);
         printTreeInfo(tree);
+        orig_values.erase(orig_values.begin()+j);
     }
     return 0;
 }
