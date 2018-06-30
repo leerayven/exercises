@@ -1,5 +1,6 @@
 #include <iostream>
 #include <vector>
+#include <stdio.h>
 template<typename T>
 struct Node_t{
     Node_t<T>* left;
@@ -16,6 +17,7 @@ public:
     void remove(Node_t<T>* node);
     void traverse_leaves(std::vector<T>& leaf_values, std::vector<int>& heights);
     void traverse(std::vector<T>& values, std::vector<int>& heights, std::vector<bool>& colors);
+    void printTree();
     Node_t<T>* lookup(T v, int* black_height);
     rbtree();
     ~rbtree();
@@ -29,6 +31,9 @@ private:
     void inner_traverse_leaves(Node_t<T>* node, std::vector<T>& leaf_values,\
         std::vector<int>& heights, int counter);
     void inner_traverse(Node_t<T>* root, std::vector<T>& values, std::vector<int>& heights, std::vector<bool>& colors, int height);
+    void printNode(Node_t<T>* node);
+    int printSubTree();
+    bool is_leaf(Node_t<T>* leaf);
 
     Node_t<T>* root;
     Node_t<T>* nil;
@@ -272,16 +277,12 @@ void rbtree<T>::transplant(Node_t<T>* origNode, Node_t<T>* newNode)
 {
     if(origNode == root){
         root = newNode;
-        return;
-    }
-    if(is_left(origNode)){
+    }else if(is_left(origNode)){
         origNode->parent->left = newNode;
     }else{
         origNode->parent->right = newNode;
     }
-    if(newNode != nil){ // not necessary for rbtree since nil can be assigned any parent
-        newNode->parent = origNode->parent;
-    }
+    newNode->parent = origNode->parent;
 }
 
 template<typename T>
@@ -303,32 +304,34 @@ void rbtree<T>::remove(Node_t<T>* node)
         }
         need_to_fixup = newSubRoot->is_black;
         fixup_node = newSubRoot->right;
+        fixup_node->parent = newSubRoot;
         if(newSubRoot != rightChild){
             transplant(newSubRoot, newSubRoot->right);
             newSubRoot->right = rightChild;
-            rightChild->parent = newSubRoot;
+            newSubRoot->right->parent = newSubRoot;
         }
         transplant(node, newSubRoot);    
         newSubRoot->left = node->left;
-        node->left->parent = newSubRoot;
+        newSubRoot->left->parent = newSubRoot;
         newSubRoot->is_black = node->is_black;
+        delete node;
     }
     if(need_to_fixup){
         remove_fixup(fixup_node);
     }
 }
 
-enum TreeFixupState{
-    TreeState_Case_1 = 0,
-    TreeState_Case_2,
-    TreeState_Case_3,
-    TreeState_Case_4,
-};
-
 template<typename T>
 inline Node_t<T>* get_brother(Node_t<T>* node){
     return is_left(node) ? node->parent->right : node->parent->left;
 }
+
+enum TreeFixupState{
+    TreeState_Case_1 = 1,
+    TreeState_Case_2,
+    TreeState_Case_3,
+    TreeState_Case_4,
+};
 
 template<typename T>
 static TreeFixupState get_tree_state(Node_t<T>* node){
@@ -347,16 +350,31 @@ static TreeFixupState get_tree_state(Node_t<T>* node){
 template<typename T>
 void rbtree<T>::remove_fixup(Node_t<T>* node)
 {
+    
+    std::cout<<"\nin remove_fixup: "<<std::endl<<std::flush;
+    if(node->is_black && node->parent != nil){
+        std::cout<<"\nreally in remove_fixup: "<<std::endl<<std::flush;
+    }
+    TreeFixupState state;
     while(node->is_black && node->parent != nil){
-        TreeFixupState state = get_tree_state(node);
+        std::cout<<"\nnil is_black: "<<nil->is_black<<std::endl<<std::flush;
         Node_t<T>* brother = get_brother(node);
+        std::cout<<"\nbrother is nil: "<<state<<std::endl<<std::flush;
+        if(brother == nil){
+            node = node->parent;
+            break;
+        }
+        state = get_tree_state(node);
+        std::cout<<"\ncase: "<<state<<std::endl<<std::flush;
         switch(state){
         case TreeState_Case_1:
             if(is_left(node)){
                 left_rotate(node->parent);
-                node->parent->is_black = false;
-                node->parent->parent->is_black = true;
+            }else{
+                right_rotate(node->parent);
             }
+            node->parent->is_black = false;
+            node->parent->parent->is_black = true;
             break;
         case TreeState_Case_2:
             brother->is_black = false;
@@ -378,11 +396,133 @@ void rbtree<T>::remove_fixup(Node_t<T>* node)
                 right_rotate(node->parent);
             }
             std::swap(node->parent->is_black, node->parent->parent->is_black);
-            get_brother(node->parent)->is_black = false;
-            break;
+            get_brother(node->parent)->is_black = true;
+            return;
         default:
             return;
        }
     }
     node->is_black = true;
+}
+
+template<typename T>
+bool rbtree<T>::is_leaf(Node_t<T>* node){
+    return node->left == nil && node->right == nil;
+}
+
+template<typename T>
+void rbtree<T>::printNode(Node_t<T>* node){
+        if (node != nil) {
+                  auto parent = node->parent;
+                  if (parent != nil) {
+                          if (node == parent->left) {
+                                  std::cout<<"L:";
+                          } else if (node == parent->right) {
+                                  std::cout<<"R:";
+                          }
+                  }
+                  if (node->is_black == false) {
+                          //printf("R:0x%08x\n", node->value);
+                          printf("R: %dx\n", node->value);
+                  } else {
+                          //printf("B:0x%08x\n", node->value);
+                          printf("B: %dx\n", node->value);
+                  }
+          }
+
+}
+
+template<typename T>
+struct node_backlog {                                                                                                                                         
+    /* Node backlogged */
+    Node_t<T>* node;
+    /* The index next to the backtrack point, valid when >= 1 */
+    int next_sub_idx;
+};  
+const int RBTREE_MAX_LEVEL = 64;
+#define RBTREE_LEFT_INDEX  0
+#define RBTREE_RIGHT_INDEX 1
+template<typename T>
+static inline void 
+nbl_push(struct node_backlog<T> *nbl, struct node_backlog<T> **top, struct node_backlog<T> **bottom) 
+{   
+    if (*top - *bottom < RBTREE_MAX_LEVEL) { 
+        (*(*top)++) = *nbl; 
+    } 
+}   
+
+template<typename T>
+static inline struct node_backlog<T> *
+nbl_pop(struct node_backlog<T> **top, struct node_backlog<T> **bottom)
+{   
+    return *top > *bottom ? --*top : NULL;
+}   
+      
+
+
+template<typename T>
+void rbtree<T>::printTree(){
+          int level = 0;
+          Node_t<T>* node = root;
+          struct node_backlog<T> nbl, *p_nbl = NULL;
+          struct node_backlog<T> *top, *bottom, nbl_stack[RBTREE_MAX_LEVEL];
+  
+          top = bottom = nbl_stack;
+  
+          for (; ;) {
+                  if (node != nil) {
+                          /* Fetch the pop-up backlogged node's sub-id.
+                           * If not backlogged, fetch the first sub-id. */
+                          int sub_index = p_nbl != NULL ? p_nbl->next_sub_idx : RBTREE_RIGHT_INDEX;
+  
+                          /* backlog should be reset since node has gone deep down */
+                          p_nbl = NULL;
+  
+                          /* Backlog the node */
+                          if (is_leaf(node) || sub_index == RBTREE_LEFT_INDEX) {
+
+                                  nbl.node = nil;
+                                  nbl.next_sub_idx = RBTREE_RIGHT_INDEX;
+                          } else {
+                                  nbl.node = node;
+                                  nbl.next_sub_idx = RBTREE_LEFT_INDEX;
+                          }
+                          nbl_push(&nbl, &top, &bottom);
+                          level++;
+  
+                          /* Draw lines as long as sub_idx is the first one */
+                          if (sub_index == RBTREE_RIGHT_INDEX) {
+                                  int i;
+                                  for (i = 1; i < level; i++) {
+                                          if (i == level - 1) {
+                                                  printf("%-8s", "+-------");
+                                          } else {
+                                                  if (nbl_stack[i - 1].node != nil) {
+                                                          printf("%-8s", "|");
+                                                  } else {
+                                                          printf("%-8s", " ");                                                                                  
+                                                  }
+                                          }
+                                  }
+                                  printNode(node);
+                          }
+  
+                          /* Move down according to sub_idx */
+                          node = sub_index == RBTREE_LEFT_INDEX ? node->left : node->right;
+                  } else {
+                          p_nbl = nbl_pop(&top, &bottom);
+                          if (p_nbl == NULL) {
+                                  /* End of traversal */
+                                  break;
+                          }
+                          node = p_nbl->node;
+                          level--;
+                  }
+          }
+    
+}
+
+template<typename T>
+int rbtree<T>::printSubTree(){
+    
 }

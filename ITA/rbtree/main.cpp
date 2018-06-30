@@ -36,10 +36,10 @@ int main(){
     srand(time(NULL));
     //insert
 #if 0    
-    vector<int> orig_values = {3, 73, 9, 8};
+    vector<int> orig_values = {258,303,522,550,779,839};
 #else
     vector<int> orig_values;
-    for(int i = 0; i != 10; ++i){
+    for(int i = 0; i != 600; ++i){
         orig_values.push_back(rand()%1000);
     }
 #endif
@@ -53,6 +53,7 @@ int main(){
 //        cout<<endl<<"iterator:"<<i<<endl;
 //        printTreeInfo(tree);
     }
+    tree.printTree();
     printTreeInfo(tree);
     for(;!orig_values.empty();){
         int j = rand()%orig_values.size();
@@ -60,6 +61,7 @@ int main(){
         int black_height;
         Node_t<int>* target_node = tree.lookup(target, &black_height);
         tree.remove(target_node);
+        tree.printTree();
         printTreeInfo(tree);
         orig_values.erase(orig_values.begin()+j);
     }
