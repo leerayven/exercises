@@ -47,6 +47,9 @@ void rbtree<T>::traverse_leaves(std::vector<T>& leaf_values, std::vector<int>& h
 
 template<typename T>
 void rbtree<T>::inner_traverse_leaves(Node_t<T>* node, std::vector<T>& leaf_values, std::vector<int>& heights, int counter){
+    if(node == nil){
+        return;
+    }
     if(node->left != nil){
         if(node->is_black)
             inner_traverse_leaves(node->left, leaf_values, heights, counter+1);
