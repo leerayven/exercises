@@ -1,14 +1,17 @@
 #include <vector>
 using namespace std;
-static inline int get_parent(int i){
+/**
+ * All elements are guaranteed to be positive integers.
+ */
+int get_parent(int i){
     return (i-1) >> 1;
 }
 
-static inline int get_left(int i){
+int get_left(int i){
     return (i << 1) | 1;
 }
 
-static inline int get_right(int i){
+int get_right(int i){
     return (i << 1) + 2;
 }
 
@@ -18,7 +21,6 @@ void max_heapify(vector<int>& nums, int i, int heap_size = 0){
     int idx = i;
     for(;;){
         parent = nums[idx];
-        // nums are guaranted to be positive integers;
         left = get_left(idx)<size ? nums[get_left(idx)] : 0;
         right = get_right(idx)<size ? nums[get_right(idx)] : 0;
         if(parent >= left && parent >= right)
@@ -34,6 +36,8 @@ void max_heapify(vector<int>& nums, int i, int heap_size = 0){
 }
 
 void build_max_heap(vector<int>& nums){
+    if(nums.size() < 2)
+        return;
     int size = static_cast<int>(nums.size());
      for(int i = (size-2)/2; i >= 0; --i){
         max_heapify(nums, i);
