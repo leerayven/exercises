@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include "max_priority_queue.h"
 int main(){
-    //vector<int> nums = {32,45,65,12,34,6,2,6,7,2,1};
+    vector<int> nums = {32,45,65,12,34,6,2,6,7,2,1};
     /*
     heapsort(nums);
     for(auto num : nums){
@@ -11,7 +11,7 @@ int main(){
     }
     cout<<endl;
     */
-    vector<int> nums;
+ //   vector<int> nums;
     MaxPriorityQueue queue(nums);
     srand(0);
     for(int i = 0; i != 10; ++i){

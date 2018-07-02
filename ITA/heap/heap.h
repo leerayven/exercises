@@ -17,6 +17,8 @@ int get_right(int i){
 
 void max_heapify(vector<int>& nums, int i, int heap_size = 0){
     int size = heap_size != 0 ? heap_size : static_cast<int>(nums.size());
+    if(size < 2)
+        return;
     int parent, left, right;
     int idx = i;
     for(;;){
