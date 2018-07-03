@@ -27,10 +27,8 @@ void partition_v2(vector<int>* nums, int start, int end){
     int pivot = nums->at(end);
     int i = start, store_idx = start;
     for(; i <= end; ++ i){
-        if(nums->at(i) <= pivot){
-            swap(nums->at(store_idx), nums->at(i));
-            ++ store_idx;
-        }
+        if(nums->at(i) <= pivot)
+            swap(nums->at(store_idx++), nums->at(i));
     }
     //swap(nums->at(store_idx), nums->at(end));
     //pivote is at store_idx-1;
