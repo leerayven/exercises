@@ -1,3 +1,4 @@
+#define NULL 0
 #include <vector>
 using namespace std;
 struct Node{
@@ -56,6 +57,11 @@ void concatLists(Node* node1, Node* node2){
 }
 
 void concatHeaps(Node* node1, Node* node2){
+    //remove node2 from list
+    node2->next->prev = node2->prev;
+    node2->prev->next = node2->next;
+
+    //add node2 to node1's children list
     node2->next = node2;
     node2->prev = node2;
     node2->parent = node1;
@@ -64,7 +70,7 @@ void concatHeaps(Node* node1, Node* node2){
     }else{
         node1->child = node2;
     }
-    node1->degree += 1 + node2->degree;
+    node1->degree += 1;
 }
 
 int FibonacciHeaps::extractMin(){
@@ -80,12 +86,12 @@ int FibonacciHeaps::extractMin(){
     int minKey = min->key;
     delete min;
     min = NULL;
-    auto saveCurNode = curNode;
     
     //traverse the root list to merge subtrees
     vector<Node*> nodes(num, NULL); 
+    auto saveCurNode = curNode; // FIXME
     do{
-        if(nodes[curNode->degree] == NULL){
+        if(nodes[curNode->degree] == NULL || nodes[nodes[curNode->degree] == curNode]){
             nodes[curNode->degree] = curNode;
             curNode = curNode->next;
         }else{
@@ -93,17 +99,16 @@ int FibonacciHeaps::extractMin(){
             nodes[curNode->degree] = NULL;
             if(curNode->key < conflictNode->key){
                 concatHeaps(curNode, conflictNode);
-                curNode = curNode->next;
             }else{
-                auto nextNode = curNode->next;
                 concatHeaps(conflictNode, curNode);
-                curNode = nextNode;
+                curNode = conflictNode;
             }
         }
-    }while(curNode != saveCurNode)
+    }while(curNode != saveCurNode);
 
     //traverse the root list to find the min node
+    saveCurNode = 
     do{
-    } while(false)
+    } while(false);
     return minKey;
 }
