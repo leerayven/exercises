@@ -16,14 +16,17 @@ public:
 //    void createHeaps();
     void insertKey(int key);
     int extractMin();
+    void mergeHeaps(FibonacciHeaps* someHeap);
     void decreaseKey();
     void deleteKey();
+    void printHeaps();
     FibonacciHeaps(): num(0), min(NULL){};
     ~FibonacciHeaps();
 private:
     int num;
     Node* min;
     void deleteFibonacciHeaps();
+    void consolidate(Node* curNode);
 };
 
 FibonacciHeaps::~FibonacciHeaps(){
@@ -67,6 +70,9 @@ void concatHeaps(Node* node1, Node* node2){
     node2->parent = node1;
     if(node1->child != NULL){
         concatLists(node2, node1->child);
+        if(node2->key < node1->child->key){
+            node1->child = node2;
+        }
     }else{
         node1->child = node2;
     }
@@ -75,40 +81,61 @@ void concatHeaps(Node* node1, Node* node2){
 
 int FibonacciHeaps::extractMin(){
     if(min == NULL) return -1;
-    Node* curNode = NULL;
-    if(min->next != min){
-        curNode = min->next;
-        //insert children to the root list;
-        concatLists(curNode, min->child);
-    }else{
-        curNode = min->child;
-    }
     int minKey = min->key;
+    if(min->child != NULL){
+        concatLists(min, min->child);
+    }
+
+    Node* curNode = min->next;
+    bool need_to_consolidate = curNode != min;
+
+    min->next->prev = min->prev;
+    min->prev->next = min->next;
     delete min;
     min = NULL;
-    
+
+    if(need_to_consolidate){
+        consolidate(curNode);
+    }
+    -- num;
+    return minKey;
+}
+
+void FibonacciHeaps::consolidate(Node* curNode){
     //traverse the root list to merge subtrees
     vector<Node*> nodes(num, NULL); 
-    auto saveCurNode = curNode; // FIXME
-    do{
-        if(nodes[curNode->degree] == NULL || nodes[nodes[curNode->degree] == curNode]){
+    while(true){
+        if(nodes[curNode->degree] == curNode){
+            break;
+        }
+        if(nodes[curNode->degree] == NULL){
             nodes[curNode->degree] = curNode;
             curNode = curNode->next;
         }else{
-            auto conflictNode = nodes[curNode->degree];
-            nodes[curNode->degree] = NULL;
-            if(curNode->key < conflictNode->key){
-                concatHeaps(curNode, conflictNode);
-            }else{
-                concatHeaps(conflictNode, curNode);
-                curNode = conflictNode;
+            auto nextNode = curNode->next;
+            while(nodes[curNode->degree] != NULL){
+                auto conflictNode = nodes[curNode->degree];
+                nodes[curNode->degree] = NULL;
+                if(curNode->key < conflictNode->key){
+                    concatHeaps(curNode, conflictNode);
+                }else{
+                    concatHeaps(conflictNode, curNode);
+                    curNode = conflictNode;
+                }
             }
+            nodes[curNode->degree] = curNode;
+            curNode = nextNode;
         }
-    }while(curNode != saveCurNode);
+    }
 
     //traverse the root list to find the min node
-    saveCurNode = 
-    do{
-    } while(false);
-    return minKey;
+    int newMinKey = __INT_MAX__;
+    Node* newMinNode = NULL;
+    for(Node* node : nodes){
+        if(node != NULL && node->key < newMinKey){
+            newMinNode = node;
+            newMinKey = node->key;
+        }
+    }
+    min = newMinNode;
 }
