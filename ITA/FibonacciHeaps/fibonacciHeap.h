@@ -1,5 +1,10 @@
-#define NULL 0
 #include <vector>
+#include <queue>
+#include <iostream>
+
+#ifndef NULL
+#define NULL nullptr
+#endif
 using namespace std;
 struct Node{
     int key;
@@ -20,6 +25,7 @@ public:
     void decreaseKey();
     void deleteKey();
     void printHeaps();
+    bool empty();
     FibonacciHeaps(): num(0), min(NULL){};
     ~FibonacciHeaps();
 private:
@@ -29,8 +35,16 @@ private:
     void consolidate(Node* curNode);
 };
 
+void FibonacciHeaps::deleteFibonacciHeaps(){
+
+}
+
 FibonacciHeaps::~FibonacciHeaps(){
     deleteFibonacciHeaps();
+}
+
+bool FibonacciHeaps::empty(){
+    return num == 0;
 }
 
 void FibonacciHeaps::insertKey(int key){
@@ -52,17 +66,20 @@ void FibonacciHeaps::insertKey(int key){
 //node1, node2 belong to list1 and list2 separately
 void concatLists(Node* node1, Node* node2){
     auto node1_next = node1->next;
-    auto node2_prev = node2->next;
+    auto node2_prev = node2->prev;
     node1->next = node2;
     node2->prev = node1;
     node1_next->prev = node2_prev;
     node2_prev->next = node1_next;
 }
 
+void removeNodeFromList(Node* node){
+    node->next->prev = node->prev;
+    node->prev->next = node->next;
+}
+
 void concatHeaps(Node* node1, Node* node2){
-    //remove node2 from list
-    node2->next->prev = node2->prev;
-    node2->prev->next = node2->next;
+    removeNodeFromList(node2);
 
     //add node2 to node1's children list
     node2->next = node2;
@@ -79,6 +96,7 @@ void concatHeaps(Node* node1, Node* node2){
     node1->degree += 1;
 }
 
+
 int FibonacciHeaps::extractMin(){
     if(min == NULL) return -1;
     int minKey = min->key;
@@ -89,8 +107,7 @@ int FibonacciHeaps::extractMin(){
     Node* curNode = min->next;
     bool need_to_consolidate = curNode != min;
 
-    min->next->prev = min->prev;
-    min->prev->next = min->next;
+    removeNodeFromList(min);
     delete min;
     min = NULL;
 
@@ -138,4 +155,33 @@ void FibonacciHeaps::consolidate(Node* curNode){
         }
     }
     min = newMinNode;
+}
+
+
+void printListAddChild(Node* nodeInList, queue<Node*>* nodes_p){
+    auto saveNode = nodeInList, curNode = nodeInList;
+    do{
+        if(curNode == saveNode){
+            cout<<curNode->key<<"("<<curNode->degree<<")*"<<"  ";
+        }else{
+            cout<<curNode->key<<"("<<curNode->degree<<")"<<"  ";
+        }
+        if(curNode->child){
+            nodes_p->push(curNode->child);
+        }
+        curNode = curNode->next;
+    }while(curNode != saveNode);
+    cout<<endl;
+}
+
+void FibonacciHeaps::printHeaps(){
+    if(empty())
+        return;
+    queue<Node*> nodes;
+    nodes.push(min);
+    for(; !nodes.empty();){
+        auto node = nodes.front();
+        printListAddChild(node, &nodes);
+        nodes.pop();
+    }
 }
