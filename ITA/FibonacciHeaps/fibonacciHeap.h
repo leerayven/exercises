@@ -1,6 +1,7 @@
 #include <vector>
 #include <queue>
 #include <iostream>
+#include <unordered_set>
 
 #ifndef NULL
 #define NULL nullptr
@@ -25,7 +26,7 @@ public:
     void mergeHeaps(FibonacciHeaps* someHeap);
     void decreaseKey(Node* node, int key);
     void deleteKey();
-    void printHeaps();
+    void printHeaps(Node* node);
     bool empty();
     FibonacciHeaps(): num(0), min(NULL){};
     ~FibonacciHeaps();
@@ -100,6 +101,7 @@ void FibonacciHeaps::deleteFibonacciHeaps(){
             }
             auto nextNode = node->next;
             delete node;
+            cout<<"delete in destructor."<<endl;
             node = nextNode;
         }while(node != saveNode);
         nodes.pop();
@@ -107,6 +109,7 @@ void FibonacciHeaps::deleteFibonacciHeaps(){
 }
 
 FibonacciHeaps::~FibonacciHeaps(){
+    cout<<"$#$#$#$#$#$#$#$#$#$#$#$\n";
     deleteFibonacciHeaps();
 }
 
@@ -160,8 +163,14 @@ int FibonacciHeaps::extractMin(){
 
     Node* curNode = min->next;
     bool need_to_consolidate = (curNode != min);
+    if(need_to_consolidate){
+        cout<<"consolidate: curNode key:"<<curNode->key<<endl;
+    }else{
+        cout<<"need not to conso, curNode key:" <<curNode->key<<endl;
+    }
 
     removeNodeFromList(min);
+    cout<<"the only delete happens here"<<endl;
     delete min;
     min = NULL;
     -- num;
@@ -184,9 +193,15 @@ int FibonacciHeaps::extractMin(){
 
 void FibonacciHeaps::consolidate(Node* curNode){
     //traverse the root list to merge subtrees
+    cout<<"|||||||||||| start consolidate"<<endl;
+    printHeaps(curNode);
     vector<Node*> nodes(100, NULL); 
+    unordered_set<Node*> nodes_seen;
     while(true){
-        if(nodes[curNode->degree] == curNode){
+        cout<<"curNode key:"<<curNode->key<<", degree:"<<curNode->degree<<"confilict:"<<(nodes[curNode->degree]!=NULL)<<endl;
+        if(nodes_seen.find(curNode) == nodes_seen.end()){
+            nodes_seen.insert(curNode);
+        }else{
             break;
         }
         auto nextNode = curNode->next;
@@ -194,6 +209,7 @@ void FibonacciHeaps::consolidate(Node* curNode){
             nodes[curNode->degree] = curNode;
         }else{
             while(nodes[curNode->degree] != NULL){
+                cout<<"curNode key is:"<<curNode->key<<", degree:"<<curNode->degree<<"; the conflict key is"<<nodes[curNode->degree]->key<<", degree:"<<nodes[curNode->degree]->degree<<endl;
                 auto conflictNode = nodes[curNode->degree];
                 nodes[curNode->degree] = NULL;
                 if(curNode->key < conflictNode->key){
@@ -202,6 +218,7 @@ void FibonacciHeaps::consolidate(Node* curNode){
                     concatHeaps(conflictNode, curNode);
                     curNode = conflictNode;
                 }
+                printHeaps(curNode);
             }
             nodes[curNode->degree] = curNode;
         }
@@ -218,10 +235,15 @@ void FibonacciHeaps::consolidate(Node* curNode){
         }
     }
     min = newMinNode;
+    if(min == NULL){
+        cout<<"curNode: NULL\n";
+    }else{
+        cout<<"curNode key: "<<min->key<<endl;
+    }
 }
 
 
-void printListAddChild(Node* nodeInList, queue<Node*>* nodes_p){
+void printListAddChild(Node* nodeInList, queue<Node*>* nodes_p, int& count){
     auto saveNode = nodeInList, curNode = nodeInList;
     do{
         if(curNode == saveNode){
@@ -232,19 +254,22 @@ void printListAddChild(Node* nodeInList, queue<Node*>* nodes_p){
         if(curNode->child){
             nodes_p->push(curNode->child);
         }
+        ++ count;
         curNode = curNode->next;
     }while(curNode != saveNode);
     cout<<endl;
 }
 
-void FibonacciHeaps::printHeaps(){
-    if(empty())
+void FibonacciHeaps::printHeaps(Node* tnode){
+    if(tnode == NULL)
         return;
+    int count = 0;
     queue<Node*> nodes;
-    nodes.push(min);
+    nodes.push(tnode);
     for(; !nodes.empty();){
         auto node = nodes.front();
-        printListAddChild(node, &nodes);
+        printListAddChild(node, &nodes, count);
         nodes.pop();
     }
+    cout<<"node count:" <<count<<endl;
 }
